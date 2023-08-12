@@ -3,6 +3,7 @@ use crate::open_drive::math::Vec2;
 
 use std::vec::Vec;
 
+#[derive(Debug)]
 pub struct Line {
     s0: f64,
     x0: f64,

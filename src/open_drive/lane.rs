@@ -4,9 +4,9 @@ use std::collections::{BTreeMap, HashMap};
 
 #[derive(Debug)]
 pub struct LaneKey {
-    road_id: String,
-    lanesection_s0: f64,
-    lane_id: i32,
+    pub road_id: String,
+    pub lanesection_s0: f64,
+    pub lane_id: i32,
 }
 
 #[derive(Debug)]
@@ -93,7 +93,6 @@ impl Lane {
                     .unwrap_or("0.0")
                     .parse()
                     .unwrap();
-
                 lane.lane_width
                     .append_poly3(lanesection_s + s_offset, Poly3::new(a, b, c, d))
             }
