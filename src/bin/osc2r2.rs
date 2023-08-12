@@ -31,13 +31,13 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut wireframe_config: ResMut<WireframeConfig>,
 ) {
-    wireframe_config.global = true;
-    let odr = osc2r2::open_drive::open_drive::OpenDrive::parse_open_drive("./Town04_copy.xodr");
+    let odr = osc2r2::open_drive::open_drive::OpenDrive::parse_open_drive("./Town04.xodr");
 
     let road_mesh = odr.get_road_network_mesh(0.1);
     let to_debug = false;
 
     if to_debug {
+        wireframe_config.global = true;
         println!(
             "#vtx: {:?}   #idx: {:?}",
             road_mesh.lane_mesh.mesh.vertices.len(),
@@ -90,7 +90,7 @@ fn setup(
             material: materials.add(Color::rgba(0.5, 0.2, 0.0, 1.0).into()),
             ..default()
         },
-        Wireframe,
+        //Wireframe,
     ));
 
     if to_debug {
