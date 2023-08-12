@@ -184,17 +184,29 @@ impl CubicSpline {
 
         let last_poly = self.s0_to_poly.last_key_value().unwrap();
 
-        if s > last_poly.0 .0 {
+        if s >= last_poly.0 .0 {
             return last_poly.1.clone();
         }
 
-        let (_, target_poly) = self
-            .s0_to_poly
-            .range(..=OrderedFloat(s))
-            .next()
-            .unwrap_or((&OrderedFloat(f64::NAN), &nan_poly));
+        let mut s0_poly_iter = self.s0_to_poly.iter().peekable();
+        while let Some((s0, poly)) = s0_poly_iter.next() {
+            let next_s0 = s0_poly_iter
+                .peek()
+                .unwrap_or(&(&OrderedFloat(s0.0), poly))
+                .0
+                 .0;
 
-        target_poly.clone()
+            if s0.0 <= s && s < next_s0 {
+                return poly.clone();
+            }
+        }
+        // invalid poly result found!
+        Poly3 {
+            a: f64::NAN,
+            b: f64::NAN,
+            c: f64::NAN,
+            d: f64::NAN,
+        }
     }
 
     pub fn approximate_linear(&self, eps: f64, s_start: f64, s_end: f64) -> Vec<f64> {
