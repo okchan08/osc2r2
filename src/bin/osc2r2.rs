@@ -32,7 +32,7 @@ fn setup(
     mut wireframe_config: ResMut<WireframeConfig>,
 ) {
     wireframe_config.global = true;
-    let odr = osc2r2::open_drive::open_drive::OpenDrive::parse_open_drive("./Town04.xodr");
+    let odr = osc2r2::open_drive::open_drive::OpenDrive::parse_open_drive("./Town04_copy.xodr");
 
     let road_mesh = odr.get_road_network_mesh(0.1);
     let to_debug = false;

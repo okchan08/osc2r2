@@ -152,8 +152,8 @@ impl CubicSpline {
         retval
     }
 
-    pub fn append_poly3(&mut self, s: f64, poly3: Poly3) {
-        self.s0_to_poly.insert(OrderedFloat(s), poly3);
+    pub fn append_poly3(&mut self, s0: f64, poly3: Poly3) {
+        self.s0_to_poly.insert(OrderedFloat(s0), poly3);
     }
 
     pub fn negate(&self) -> CubicSpline {
@@ -216,6 +216,11 @@ impl CubicSpline {
             } else {
                 s_poly_iter.peek().unwrap().0 .0.min(s_end)
             };
+            let mut s_poly_vals = s_poly.1.approximate_linear(eps, s_start_poly, s_end_poly);
+            if s_poly_vals.len() < 2 {
+                panic!("invalid poly approximation!");
+            }
+            s_vals.append(&mut s_poly_vals);
         }
         s_vals
     }
