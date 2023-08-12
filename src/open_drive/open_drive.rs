@@ -1,5 +1,5 @@
 use crate::open_drive::{
-    mesh::{LaneMesh, RoadNetworkMesh},
+    mesh::{LaneMesh, RoadMarkMesh, RoadNetworkMesh},
     road::Road,
 };
 
@@ -28,6 +28,7 @@ impl OpenDrive {
 
     pub fn get_road_network_mesh(&self, eps: f64) -> RoadNetworkMesh {
         let mut lane_mesh = LaneMesh::new();
+        let mut roadmark_mesh = RoadMarkMesh::new();
         for (road_id, road) in self.id_to_road.iter() {
             lane_mesh
                 .road_start_indicies
@@ -44,13 +45,30 @@ impl OpenDrive {
                         .lane_start_indices
                         .insert(lanes_idx_offset, *lane_id);
                     lane_mesh.mesh.add_mesh(&road.get_lane_mesh(lane, eps));
+
+                    let roadmark_idx_offset = roadmark_mesh.mesh.vertices.len();
+                    roadmark_mesh
+                        .lane_start_indices
+                        .insert(roadmark_idx_offset, lane.id);
+                    let roadmarks = lane
+                        .get_roadmarks(lanesection.s0, road.get_lanesection_end(lanesection.s0));
+
+                    for roadmark in &roadmarks {
+                        let roadmarks_idx_offset = roadmark_mesh.mesh.vertices.len();
+                        roadmark_mesh
+                            .roadmark_type_start_indicies
+                            .insert(roadmarks_idx_offset, roadmark.mark_type.to_owned());
+                        roadmark_mesh
+                            .mesh
+                            .add_mesh(&road.get_roadmark_mesh(lane, roadmark, eps));
+                    }
                 }
             }
         }
 
         RoadNetworkMesh {
             lane_mesh: lane_mesh,
-            road_mark_mesh: None,
+            road_mark_mesh: roadmark_mesh,
         }
     }
 }

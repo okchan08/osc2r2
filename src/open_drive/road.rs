@@ -1,6 +1,6 @@
 use roxmltree;
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use ordered_float::OrderedFloat;
 
@@ -16,6 +16,7 @@ use super::lane::Lane;
 use super::lane_section::LaneSection;
 use super::math::{Vec2, Vec3};
 use super::mesh::Mesh3D;
+use super::road_mark::RoadMark;
 
 #[derive(Debug)]
 pub struct Road {
@@ -376,6 +377,64 @@ impl Road {
             return f64::NAN;
         }
         lanesection.1.s0
+    }
+
+    pub fn get_roadmark_mesh(&self, lane: &Lane, roadmark: &RoadMark, eps: f64) -> Mesh3D {
+        let s_vals =
+            self.approximate_lane_border_linear(lane, roadmark.s_start, roadmark.s_end, eps, true);
+        let mut out_mesh = Mesh3D::new();
+
+        for s_val in s_vals {
+            let mut vn_edge_a = Vec3::new(0.0, 0.0, 0.0);
+            let t_edge_a = lane.outer_border.get(s_val.0, 0.0, true)
+                + roadmark.width * 0.5
+                + roadmark.t_offset;
+            out_mesh
+                .vertices
+                .push(self.get_surface_pt(s_val.0, t_edge_a, &mut vn_edge_a));
+            out_mesh.normals.push(vn_edge_a);
+
+            let mut vn_edge_b = Vec3::new(0.0, 0.0, 0.0);
+            let t_edge_b = t_edge_a - roadmark.width;
+            out_mesh
+                .vertices
+                .push(self.get_surface_pt(s_val.0, t_edge_b, &mut vn_edge_b));
+            out_mesh.normals.push(vn_edge_b);
+        }
+
+        let num_pts = out_mesh.vertices.len();
+        for i in (3..num_pts).step_by(2) {
+            let idx = i as u32;
+            out_mesh
+                .indicies
+                .extend(vec![idx - 3, idx, idx - 1, idx - 3, idx - 2, idx]);
+        }
+        out_mesh
+    }
+
+    fn approximate_lane_border_linear(
+        &self,
+        lane: &Lane,
+        s_start: f64,
+        s_end: f64,
+        eps: f64,
+        outer: bool,
+    ) -> BTreeSet<OrderedFloat<f64>> {
+        let mut s_vals = self.ref_line.approximate_linear(eps, s_start, s_end);
+        let border = if outer {
+            &lane.outer_border
+        } else {
+            &lane.inner_border
+        };
+        let s_vals_brdr = border.approximate_linear(eps, s_start, s_end);
+        s_vals.append(
+            &mut s_vals_brdr
+                .into_iter()
+                .map(|val| OrderedFloat(val))
+                .collect(),
+        );
+        // TODO handle height and superelevation here
+        s_vals
     }
 
     fn get_xyz(&self, s: f64, t: f64, h: f64, _e_h: Option<&mut Vec3>) -> Vec3 {

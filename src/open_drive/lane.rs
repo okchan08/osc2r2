@@ -3,7 +3,7 @@ use bevy::prelude::ParallaxMappingMethod;
 use roxmltree;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
-use super::road_mark::RoadMarkGroup;
+use super::road_mark::{RoadMark, RoadMarkGroup};
 
 #[derive(Debug)]
 pub struct LaneKey {
@@ -108,9 +108,6 @@ impl Lane {
                 .children()
                 .filter(|&node| node.has_tag_name("roadMark"))
             {
-                if parent_road_id == "0" && lane_id == 2 {
-                    println!("{:?}", roadmark_node.attributes());
-                }
                 lane.roadmark_groups
                     .insert(RoadMarkGroup::parse_road_mark_group(
                         &roadmark_node,
@@ -119,11 +116,83 @@ impl Lane {
                         parent_road_id,
                     ));
             }
-            if parent_road_id == "0" && lane_id == 2 {
-                println!("{:?}", lane.roadmark_groups);
-            }
             lanes.insert(lane_id, lane);
         }
         lanes
+    }
+
+    pub fn get_roadmarks(&self, s_start: f64, s_end: f64) -> Vec<RoadMark> {
+        if s_start == s_end || self.roadmark_groups.is_empty() {
+            return vec![];
+        }
+
+        let mut roadmarks = vec![];
+        let mut roadmark_group_iter = self.roadmark_groups.iter().peekable();
+
+        while let Some(roadmark_group) = roadmark_group_iter.next() {
+            let roadmark_group_s0 = roadmark_group.lanesection_s0 + roadmark_group.s_offset;
+            let s_start_roadmark_group = s_start.max(roadmark_group_s0.0);
+            let s_end_roadmark_group = match roadmark_group_iter.peek() {
+                None => s_end,
+                Some(&next_roadmark) => {
+                    s_end.min(next_roadmark.lanesection_s0.0 + next_roadmark.s_offset.0)
+                }
+            };
+            if s_start_roadmark_group >= s_end_roadmark_group {
+                continue;
+            }
+            let mut width = if roadmark_group.weight == "bold" {
+                0.25
+            } else {
+                0.1
+            };
+
+            if roadmark_group.roadmakr_lines.is_empty() {
+                if roadmark_group.width.0 > 0.0 {
+                    width = roadmark_group.width.0;
+                }
+                roadmarks.push(RoadMark {
+                    road_id: self.key.road_id.to_owned(),
+                    lanesection_s0: self.key.lanesection_s0,
+                    lane_id: self.id,
+                    group_s0: roadmark_group_s0.0,
+                    s_start: s_start_roadmark_group,
+                    s_end: s_end_roadmark_group,
+                    width: width,
+                    mark_type: roadmark_group.mark_type.to_owned(),
+                    t_offset: 0.0,
+                });
+            } else {
+                for roadmark_line in &roadmark_group.roadmakr_lines {
+                    if roadmark_line.width.0 > 0.0 {
+                        width = roadmark_line.width.0;
+                    }
+                    if roadmark_line.length.0 + roadmark_line.space.0 == 0.0 {
+                        continue;
+                    }
+                    let s0_roadmarks_line = roadmark_line.group_s0.0 + roadmark_line.s_offset.0;
+                    let mut s_start_single_roadmark = s0_roadmarks_line;
+                    while s_start_single_roadmark < s_end_roadmark_group {
+                        let s_end_single_roadmark =
+                            s_end.min(s_start_single_roadmark + roadmark_line.width.0);
+                        roadmarks.push(RoadMark {
+                            road_id: self.key.road_id.to_owned(),
+                            lanesection_s0: self.key.lanesection_s0,
+                            lane_id: self.id,
+                            group_s0: roadmark_group_s0.0,
+                            s_start: s_start_single_roadmark,
+                            s_end: s_end_single_roadmark,
+                            width: width,
+                            t_offset: roadmark_line.t_offset.0,
+                            mark_type: roadmark_group.mark_type.clone()
+                                + roadmark_line.name.as_str(),
+                        });
+
+                        s_start_single_roadmark += (roadmark_line.length.0 + roadmark_line.space.0);
+                    }
+                }
+            }
+        }
+        roadmarks
     }
 }

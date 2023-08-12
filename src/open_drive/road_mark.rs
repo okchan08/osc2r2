@@ -5,48 +5,48 @@ use std::collections::BTreeSet;
 
 #[derive(Debug, PartialEq, PartialOrd, Eq, Ord)]
 pub struct RoadMarkLine {
-    road_id: String,
-    lanesection_s0: OrderedFloat<f64>,
-    lane_id: i32,
-    group_s0: OrderedFloat<f64>,
-    width: OrderedFloat<f64>,
-    length: OrderedFloat<f64>,
-    space: OrderedFloat<f64>,
-    t_offset: OrderedFloat<f64>,
-    s_offset: OrderedFloat<f64>,
+    pub road_id: String,
+    pub lanesection_s0: OrderedFloat<f64>,
+    pub lane_id: i32,
+    pub group_s0: OrderedFloat<f64>,
+    pub width: OrderedFloat<f64>,
+    pub length: OrderedFloat<f64>,
+    pub space: OrderedFloat<f64>,
+    pub t_offset: OrderedFloat<f64>,
+    pub s_offset: OrderedFloat<f64>,
 
-    name: String,
-    rule: String,
+    pub name: String,
+    pub rule: String,
 }
 
 #[derive(Debug, PartialEq, PartialOrd, Eq, Ord)]
 pub struct RoadMarkGroup {
-    road_id: String,
-    lanesection_s0: OrderedFloat<f64>,
-    lane_id: i32,
-    width: OrderedFloat<f64>,
-    height: OrderedFloat<f64>,
-    s_offset: OrderedFloat<f64>,
-    mark_type: String,
-    weight: String,
-    color: String,
-    material: String,
-    lane_change: String,
-    roadmakr_lines: BTreeSet<RoadMarkLine>,
+    pub road_id: String,
+    pub lanesection_s0: OrderedFloat<f64>,
+    pub lane_id: i32,
+    pub width: OrderedFloat<f64>,
+    pub height: OrderedFloat<f64>,
+    pub s_offset: OrderedFloat<f64>,
+    pub mark_type: String,
+    pub weight: String,
+    pub color: String,
+    pub material: String,
+    pub lane_change: String,
+    pub roadmakr_lines: BTreeSet<RoadMarkLine>,
 }
 
 #[derive(Debug)]
 pub struct RoadMark {
-    road_id: String,
-    lanesection_s0: f64,
-    lane_id: i32,
-    group_s0: f64,
-    s_start: f64,
-    s_end: f64,
-    t_offset: f64,
-    width: f64,
+    pub road_id: String,
+    pub lanesection_s0: f64,
+    pub lane_id: i32,
+    pub group_s0: f64,
+    pub s_start: f64,
+    pub s_end: f64,
+    pub t_offset: f64,
+    pub width: f64,
 
-    mark_type: String,
+    pub mark_type: String,
 }
 
 impl RoadMarkGroup {

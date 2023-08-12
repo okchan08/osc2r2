@@ -32,10 +32,16 @@ impl Mesh3D {
         }
     }
 
-    pub fn get_bevy_mesh_position(&self) -> Vec<bevy::prelude::Vec3> {
+    pub fn get_bevy_mesh_position(&self, z_bias: f32) -> Vec<bevy::prelude::Vec3> {
+        // TODO : in order to avoid z-fighting in a mesh, add a z bias only in vec.z.
+        //        however this does not work fine in a 3D road.
         let mut retval = vec![];
         for v in &self.vertices {
-            retval.push(bevy::prelude::Vec3::new(v.0 as f32, v.1 as f32, v.2 as f32));
+            retval.push(bevy::prelude::Vec3::new(
+                v.0 as f32,
+                v.1 as f32,
+                v.2 as f32 + z_bias,
+            ));
         }
         retval
     }
@@ -96,10 +102,22 @@ pub struct RoadMarkMesh {
     pub roadmark_type_start_indicies: HashMap<usize, String>,
 }
 
+impl RoadMarkMesh {
+    pub fn new() -> Self {
+        Self {
+            mesh: Mesh3D::new(),
+            road_start_indicies: HashMap::new(),
+            lanesec_start_indices: HashMap::new(),
+            lane_start_indices: HashMap::new(),
+            roadmark_type_start_indicies: HashMap::new(),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct RoadNetworkMesh {
     pub lane_mesh: LaneMesh,
-    pub road_mark_mesh: Option<LaneMesh>,
+    pub road_mark_mesh: RoadMarkMesh,
 }
 
 impl RoadNetworkMesh {

@@ -57,8 +57,6 @@ fn setup(
         }
     }
 
-    let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
-
     commands.spawn(Camera3dBundle {
         camera: Camera {
             hdr: true, // 1. HDR is required for bloom
@@ -68,9 +66,11 @@ fn setup(
         ..default()
     });
 
+    let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
+
     mesh.insert_attribute(
         Mesh::ATTRIBUTE_POSITION,
-        road_mesh.lane_mesh.mesh.get_bevy_mesh_position(),
+        road_mesh.lane_mesh.mesh.get_bevy_mesh_position(0.0),
     );
     mesh.insert_attribute(
         Mesh::ATTRIBUTE_NORMAL,
@@ -87,7 +87,33 @@ fn setup(
     commands.spawn((
         PbrBundle {
             mesh: meshes.add(mesh),
-            material: materials.add(Color::rgba(0.5, 0.2, 0.0, 1.0).into()),
+            material: materials.add(Color::rgba(0.37, 0.37, 0.37, 1.0).into()),
+            ..default()
+        },
+        //Wireframe,
+    ));
+
+    let mut roadmark_mesh = Mesh::new(PrimitiveTopology::TriangleList);
+    roadmark_mesh.insert_attribute(
+        Mesh::ATTRIBUTE_POSITION,
+        road_mesh.road_mark_mesh.mesh.get_bevy_mesh_position(0.01),
+    );
+    roadmark_mesh.insert_attribute(
+        Mesh::ATTRIBUTE_NORMAL,
+        road_mesh.road_mark_mesh.mesh.get_bevy_mesh_normals(),
+    );
+    roadmark_mesh.insert_attribute(
+        Mesh::ATTRIBUTE_UV_0,
+        road_mesh.road_mark_mesh.mesh.get_bevy_mesh_uv(),
+    );
+    roadmark_mesh.set_indices(Some(mesh::Indices::U32(
+        road_mesh.road_mark_mesh.mesh.indicies.clone(),
+    )));
+
+    commands.spawn((
+        PbrBundle {
+            mesh: meshes.add(roadmark_mesh),
+            material: materials.add(Color::rgba(1.0, 1.0, 1.0, 1.0).into()),
             ..default()
         },
         //Wireframe,
@@ -103,7 +129,7 @@ fn setup(
             .try_into()
             .unwrap(),
         );
-        for pos in road_mesh.lane_mesh.mesh.get_bevy_mesh_position().iter() {
+        for pos in road_mesh.lane_mesh.mesh.get_bevy_mesh_position(0.0).iter() {
             commands.spawn(PbrBundle {
                 mesh: ball.clone(),
                 transform: Transform::from_xyz(pos.x, pos.y, pos.z),
