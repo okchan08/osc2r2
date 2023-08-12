@@ -363,6 +363,11 @@ impl Road {
         self.get_xyz(s, t, h_t, Some(vn))
     }
 
+    pub fn get_lanesection(&self, s: f64) -> Option<&LaneSection> {
+        let s0 = self.get_lanesection_s0(s);
+        self.s_to_lanesection.get(&OrderedFloat(s0))
+    }
+
     fn get_lanesection_s0(&self, s: f64) -> f64 {
         if self.s_to_lanesection.is_empty() {
             return f64::NAN;
@@ -437,7 +442,7 @@ impl Road {
         s_vals
     }
 
-    fn get_xyz(&self, s: f64, t: f64, h: f64, _e_h: Option<&mut Vec3>) -> Vec3 {
+    pub fn get_xyz(&self, s: f64, t: f64, h: f64, _e_h: Option<&mut Vec3>) -> Vec3 {
         let s_vec = self.ref_line.get_grad(s);
         let theta: f64 = 0.0; // TODO handle superelevation here
 

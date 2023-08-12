@@ -8,6 +8,8 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
+use super::math::Vec3;
+
 #[derive(Debug)]
 pub struct OpenDrive {
     id_to_road: HashMap<String, Road>,
@@ -24,6 +26,20 @@ impl OpenDrive {
         OpenDrive {
             id_to_road: Road::parse_roads(&mut node),
         }
+    }
+
+    pub fn get_road_transform(&self, road_id: &String, lane_id: i32, s: f64) -> Option<Vec3> {
+        if let Some(road) = self.id_to_road.get(road_id) {
+            if let Some(lanesection) = road.get_lanesection(s) {
+                if let Some(lane) = lanesection.id_to_lane.get(&lane_id) {
+                    let t_inner = lane.inner_border.get(s, 0.0, true);
+                    let t_outer = lane.outer_border.get(s, 0.0, true);
+                    let t = (t_inner + t_outer) / 2.0;
+                    return Some(road.get_xyz(s, t, 0.0, None));
+                }
+            }
+        }
+        None
     }
 
     pub fn get_road_network_mesh(&self, eps: f64) -> RoadNetworkMesh {
