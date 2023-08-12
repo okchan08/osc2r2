@@ -50,6 +50,7 @@ impl OpenDrive {
 
         RoadNetworkMesh {
             lane_mesh: lane_mesh,
+            road_mark_mesh: None,
         }
     }
 }

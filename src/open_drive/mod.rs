@@ -1,4 +1,3 @@
-pub mod float;
 pub mod geometry;
 pub mod lane;
 pub mod lane_section;
@@ -8,3 +7,5 @@ pub mod open_drive;
 pub mod open_drive_parser;
 pub mod ref_line;
 pub mod road;
+pub mod road_mark;
+pub mod utils;

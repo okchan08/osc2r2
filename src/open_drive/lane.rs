@@ -1,6 +1,9 @@
 use crate::open_drive::geometry::cubic_spline::{CubicSpline, Poly3};
+use bevy::prelude::ParallaxMappingMethod;
 use roxmltree;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
+
+use super::road_mark::RoadMarkGroup;
 
 #[derive(Debug)]
 pub struct LaneKey {
@@ -19,6 +22,7 @@ pub struct Lane {
     pub inner_border: CubicSpline,
     pub predecessor: Option<u32>,
     pub successor: Option<u32>,
+    pub roadmark_groups: BTreeSet<RoadMarkGroup>,
 }
 
 impl Lane {
@@ -47,6 +51,7 @@ impl Lane {
                 inner_border: CubicSpline::new(),
                 predecessor: None,
                 successor: None,
+                roadmark_groups: BTreeSet::new(),
             };
 
             if let Some(link_node) = lane_node.children().find(|&node| node.has_tag_name("link")) {
@@ -99,6 +104,24 @@ impl Lane {
 
             // TODO parse lane height
             // TODO parse road marks
+            for roadmark_node in lane_node
+                .children()
+                .filter(|&node| node.has_tag_name("roadMark"))
+            {
+                if parent_road_id == "0" && lane_id == 2 {
+                    println!("{:?}", roadmark_node.attributes());
+                }
+                lane.roadmark_groups
+                    .insert(RoadMarkGroup::parse_road_mark_group(
+                        &roadmark_node,
+                        lane_id,
+                        lanesection_s,
+                        parent_road_id,
+                    ));
+            }
+            if parent_road_id == "0" && lane_id == 2 {
+                println!("{:?}", lane.roadmark_groups);
+            }
             lanes.insert(lane_id, lane);
         }
         lanes

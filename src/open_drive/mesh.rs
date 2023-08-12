@@ -88,8 +88,18 @@ impl LaneMesh {
 }
 
 #[derive(Debug)]
+pub struct RoadMarkMesh {
+    pub mesh: Mesh3D,
+    pub road_start_indicies: HashMap<usize, String>,
+    pub lanesec_start_indices: HashMap<usize, f64>,
+    pub lane_start_indices: HashMap<usize, i32>,
+    pub roadmark_type_start_indicies: HashMap<usize, String>,
+}
+
+#[derive(Debug)]
 pub struct RoadNetworkMesh {
     pub lane_mesh: LaneMesh,
+    pub road_mark_mesh: Option<LaneMesh>,
 }
 
 impl RoadNetworkMesh {
