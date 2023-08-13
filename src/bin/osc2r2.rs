@@ -31,7 +31,7 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut wireframe_config: ResMut<WireframeConfig>,
 ) {
-    let odr = osc2r2::open_drive::open_drive::OpenDrive::parse_open_drive("./curve_r100.xodr");
+    let odr = osc2r2::open_drive::open_drive::OpenDrive::parse_open_drive("./Town04.xodr");
 
     let road_mesh = odr.get_road_network_mesh(0.1);
     let to_debug = false;

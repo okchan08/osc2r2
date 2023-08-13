@@ -32,10 +32,7 @@ impl Spiral {
         curv_start: f64,
         curv_end: f64,
     ) -> Self {
-        let c_dot = (curv_end - curv_start) / length;
-        let s0_spiral = curv_start / c_dot;
-        let (x0_spiral, y0_spiral, a0_spiral) = odr_spiral(s0_spiral, c_dot);
-        Self {
+        let mut spiral = Spiral {
             s0: s0,
             x0: x0,
             y0: y0,
@@ -43,21 +40,31 @@ impl Spiral {
             length: length,
             curv_start: curv_start,
             curv_end: curv_end,
-            s_start: curv_start / c_dot,
-            s_end: curv_end / c_dot,
-            c_dot: c_dot,
-            s0_spiral: s0_spiral,
-            x0_spiral: x0_spiral,
-            y0_spiral: y0_spiral,
-            a0_spiral: a0_spiral,
-        }
+            s_start: 0.0,
+            s_end: 0.0,
+            c_dot: 0.0,
+            s0_spiral: 0.0,
+            x0_spiral: 0.0,
+            y0_spiral: 0.0,
+            a0_spiral: 0.0,
+        };
+        let c_dot = (spiral.curv_end - spiral.curv_start) / spiral.length;
+        let s0_spiral = spiral.curv_start / c_dot;
+        let (x0_spiral, y0_spiral, a0_spiral) = odr_spiral(s0_spiral, c_dot);
+        spiral.s_start = spiral.curv_start / c_dot;
+        spiral.s_end = spiral.curv_end / c_dot;
+        spiral.c_dot = c_dot;
+        spiral.s0_spiral = s0_spiral;
+        spiral.x0_spiral = x0_spiral;
+        spiral.y0_spiral = y0_spiral;
+        spiral.a0_spiral = a0_spiral;
+        spiral
     }
 }
 
 impl RoadGeometry for Spiral {
     fn get_xy(&self, s: f64) -> Vec2 {
-        let (xs_spiral, ys_spiral, as_spiral) =
-            odr_spiral(s - self.s0 + self.s0_spiral, self.c_dot);
+        let (xs_spiral, ys_spiral, _) = odr_spiral(s - self.s0 + self.s0_spiral, self.c_dot);
         let hdg = self.hdg0 - self.a0_spiral;
         let xt = (hdg.cos() * (xs_spiral - self.x0_spiral))
             - (hdg.sin() * (ys_spiral - self.y0_spiral))
@@ -69,8 +76,7 @@ impl RoadGeometry for Spiral {
     }
 
     fn get_grad(&self, s: f64) -> Vec2 {
-        let (xs_spiral, ys_spiral, as_spiral) =
-            odr_spiral(s - self.s0 + self.s0_spiral, self.c_dot);
+        let (_, _, as_spiral) = odr_spiral(s - self.s0 + self.s0_spiral, self.c_dot);
         let hdg = as_spiral + self.hdg0 - self.a0_spiral;
         Vec2(hdg.cos(), hdg.sin())
     }
@@ -81,7 +87,7 @@ impl RoadGeometry for Spiral {
         let mut curr_s = self.s0;
         while curr_s < (self.s0 + self.length) {
             retval.push(curr_s);
-            curr_s += (10.0 * eps);
+            curr_s += 10.0 * eps;
         }
         retval
     }
@@ -91,38 +97,36 @@ impl RoadGeometry for Spiral {
     }
 }
 
-fn polevl(x: f64, coef: &Vec<f64>, n: i32) -> f64 {
+fn polevl(x: f64, coef: &[f64], n: usize) -> f64 {
     let mut ans;
-    let mut p = coef.iter();
     let mut i;
 
-    ans = *p.next().unwrap();
+    ans = coef[0];
     i = n;
 
     while i > 0 {
         i -= 1;
-        ans = ans * x + *p.next().unwrap();
+        ans = ans * x + coef[i];
     }
     return ans;
 }
 
-fn p1evl(x: f64, coef: &Vec<f64>, n: i32) -> f64 {
+fn p1evl(x: f64, coef: &[f64], n: usize) -> f64 {
     let mut ans;
-    let mut p = coef.iter();
     let mut i;
 
-    ans = x + *p.next().unwrap();
+    ans = x + coef[0];
     i = n - 1;
 
     while i > 0 {
         i -= 1;
-        ans = ans * x + *p.next().unwrap();
+        ans = ans * x + coef[i];
     }
     ans
 }
 
 /* S(x) for small x */
-const sn: [f64; 6] = [
+const SN: [f64; 6] = [
     -2.99181919401019853726E3,
     7.08840045257738576863E5,
     -6.29741486205862506537E7,
@@ -130,7 +134,7 @@ const sn: [f64; 6] = [
     -4.42979518059697779103E10,
     3.18016297876567817986E11,
 ];
-const sd: [f64; 6] = [
+const SD: [f64; 6] = [
     /* 1.00000000000000000000E0,*/
     2.81376268889994315696E2,
     4.55847810806532581675E4,
@@ -141,7 +145,7 @@ const sd: [f64; 6] = [
 ];
 
 /* C(x) for small x */
-const cn: [f64; 6] = [
+const CN: [f64; 6] = [
     -4.98843114573573548651E-8,
     9.50428062829859605134E-6,
     -6.45191435683965050962E-4,
@@ -149,7 +153,7 @@ const cn: [f64; 6] = [
     -2.05525900955013891793E-1,
     9.99999999999999998822E-1,
 ];
-const cd: [f64; 7] = [
+const CD: [f64; 7] = [
     3.99982968972495980367E-12,
     9.15439215774657478799E-10,
     1.25001862479598821474E-7,
@@ -160,7 +164,7 @@ const cd: [f64; 7] = [
 ];
 
 /* Auxiliary function f(x) */
-const fns: [f64; 10] = [
+const FNS: [f64; 10] = [
     4.21543555043677546506E-1,
     1.43407919780758885261E-1,
     1.15220955073585758835E-2,
@@ -172,7 +176,7 @@ const fns: [f64; 10] = [
     1.34283276233062758925E-16,
     3.76329711269987889006E-20,
 ];
-const fd: [f64; 10] = [
+const FD: [f64; 10] = [
     /*  1.00000000000000000000E0,*/
     7.51586398353378947175E-1,
     1.16888925859191382142E-1,
@@ -187,7 +191,7 @@ const fd: [f64; 10] = [
 ];
 
 /* Auxiliary function g(x) */
-const gn: [f64; 11] = [
+const GN: [f64; 11] = [
     5.04442073643383265887E-1,
     1.97102833525523411709E-1,
     1.87648584092575249293E-2,
@@ -200,7 +204,7 @@ const gn: [f64; 11] = [
     8.36354435630677421531E-19,
     1.86958710162783235106E-22,
 ];
-const gd: [f64; 11] = [
+const GD: [f64; 11] = [
     /*  1.00000000000000000000E0,*/
     1.47495759925128324529E0,
     3.37748989120019970451E-1,
@@ -216,17 +220,17 @@ const gd: [f64; 11] = [
 ];
 
 fn fresnel(xxa: f64) -> (f64, f64) {
-    let (mut f, g, mut cc, mut ss, c, s, mut t, u);
-    let (mut x, mut x2);
+    let (f, g, mut cc, mut ss, c, s, mut t, u);
+    let (x, mut x2);
 
     x = xxa.abs();
     x2 = x * x;
 
-    if (x2 < 2.5625) {
+    if x2 < 2.5625 {
         t = x2 * x2;
-        ss = x * x2 * polevl(t, &sn.to_vec(), 5) / p1evl(t, &sd.to_vec(), 6);
-        cc = x * polevl(t, &cn.to_vec(), 5) / polevl(t, &cd.to_vec(), 6);
-    } else if (x > 36974.0) {
+        ss = x * x2 * polevl(t, &SN, 5) / p1evl(t, &SD, 6);
+        cc = x * polevl(t, &CN, 5) / polevl(t, &CD, 6);
+    } else if x > 36974.0 {
         cc = 0.5;
         ss = 0.5;
     } else {
@@ -234,8 +238,8 @@ fn fresnel(xxa: f64) -> (f64, f64) {
         t = PI * x2;
         u = 1.0 / (t * t);
         t = 1.0 / t;
-        f = 1.0 - u * polevl(u, &fns.to_vec(), 9) / p1evl(u, &fd.to_vec(), 10);
-        g = t * polevl(u, &gn.to_vec(), 10) / p1evl(u, &gd.to_vec(), 11);
+        f = 1.0 - u * polevl(u, &FNS, 9) / p1evl(u, &FD, 10);
+        g = t * polevl(u, &GN, 10) / p1evl(u, &GD, 11);
 
         t = PI * 0.5 * x2;
         c = t.cos();
@@ -245,13 +249,14 @@ fn fresnel(xxa: f64) -> (f64, f64) {
         ss = 0.5 - (f * c + g * s) / t;
     }
 
-    if (xxa < 0.0) {
+    if xxa < 0.0 {
         cc = -cc;
         ss = -ss;
     }
     (cc, ss)
 }
 
+// TODO: fix bug in the estimation.
 fn odr_spiral(s: f64, c_dot: f64) -> (f64, f64, f64) {
     let mut a = 1.0 / c_dot.abs().sqrt();
     a *= PI.sqrt();

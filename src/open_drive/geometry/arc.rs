@@ -40,7 +40,7 @@ impl RoadGeometry for Arc {
         Vec2(dx, dy)
     }
 
-    fn approximate_linear(&self, eps: f64) -> Vec<f64> {
+    fn approximate_linear(&self, _eps: f64) -> Vec<f64> {
         // TODO: properly implement
         let mut retval = vec![];
         let s_step = 0.01 / self.curvature.abs(); // sample at approx. every 1 deg.

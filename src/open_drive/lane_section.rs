@@ -1,7 +1,6 @@
 use crate::open_drive::lane::Lane;
 use std::collections::BTreeMap;
 
-use ordered_float::OrderedFloat;
 use roxmltree;
 
 use super::road::Road;

@@ -44,26 +44,26 @@ impl Poly3 {
                 s = s + f64::abs(eps / self.c).sqrt();
             }
         } else {
-            let a = self.a;
-            let b = self.b;
-            let c = self.c;
-            let d = self.d;
+            todo!();
+            //let a = self.a;
+            //let b = self.b;
+            //let c = self.c;
+            //let d = self.d;
             /* transform to parametric form */
-            let s_0 = s_start;
-            let s_1 = s_end;
-            let d_p = -d * s_0 * s_0 * s_0 + d * s_1 * s_1 * s_1 - 3.0 * d * s_0 * s_1 * s_1
-                + 3.0 * d * s_0 * s_0 * s_1;
-            let c_p = 3.0 * d * s_0 * s_0 * s_0 + 3.0 * d * s_0 * s_1 * s_1
-                - 6.0 * d * s_0 * s_0 * s_1
-                + c * s_0 * s_0
-                + c * s_1 * s_1
-                - 2.0 * c * s_0 * s_1;
-            let b_p = -3.0 * d * s_0 * s_0 * s_0 + 3.0 * d * s_0 * s_0 * s_1 - 2.0 * c * s_0 * s_0
-                + 2.0 * c * s_0 * s_1
-                - b * s_0
-                + b * s_1;
-            let a_p = d * s_0 * s_0 * s_0 + c * s_0 * s_0 + b * s_0 + a;
-            todo!()
+            //let s_0 = s_start;
+            //let s_1 = s_end;
+            //let d_p = -d * s_0 * s_0 * s_0 + d * s_1 * s_1 * s_1 - 3.0 * d * s_0 * s_1 * s_1
+            //    + 3.0 * d * s_0 * s_0 * s_1;
+            //let c_p = 3.0 * d * s_0 * s_0 * s_0 + 3.0 * d * s_0 * s_1 * s_1
+            //    - 6.0 * d * s_0 * s_0 * s_1
+            //    + c * s_0 * s_0
+            //    + c * s_1 * s_1
+            //    - 2.0 * c * s_0 * s_1;
+            //let b_p = -3.0 * d * s_0 * s_0 * s_0 + 3.0 * d * s_0 * s_0 * s_1 - 2.0 * c * s_0 * s_0
+            //    + 2.0 * c * s_0 * s_1
+            //    - b * s_0
+            //    + b * s_1;
+            //let a_p = d * s_0 * s_0 * s_0 + c * s_0 * s_0 + b * s_0 + a;
 
             //const std::array<Vec1D, 4> coefficients = {{{a_p}, {b_p}, {c_p}, {d_p}}};
             //const std::set<double>     p_vals = CubicBezier1D(CubicBezier1D::get_control_points(coefficients)).approximate_linear(eps);

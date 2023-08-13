@@ -4,7 +4,6 @@ pub mod lane_section;
 pub mod math;
 pub mod mesh;
 pub mod open_drive;
-pub mod open_drive_parser;
 pub mod ref_line;
 pub mod road;
 pub mod road_mark;

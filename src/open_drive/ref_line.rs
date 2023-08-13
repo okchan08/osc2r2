@@ -5,7 +5,7 @@ use ordered_float::OrderedFloat;
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use super::{math::Vec2, math::Vec3, mesh::Mesh3D};
+use super::{math::Vec2, math::Vec3};
 
 #[derive(Debug)]
 pub struct RefLine {

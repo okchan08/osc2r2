@@ -1,7 +1,6 @@
 use crate::open_drive::geometry::cubic_spline::{CubicSpline, Poly3};
-use bevy::prelude::ParallaxMappingMethod;
 use roxmltree;
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet};
 
 use super::road_mark::{RoadMark, RoadMarkGroup};
 
@@ -188,7 +187,7 @@ impl Lane {
                                 + roadmark_line.name.as_str(),
                         });
 
-                        s_start_single_roadmark += (roadmark_line.length.0 + roadmark_line.space.0);
+                        s_start_single_roadmark += roadmark_line.length.0 + roadmark_line.space.0;
                     }
                 }
             }

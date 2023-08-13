@@ -171,16 +171,12 @@ impl Road {
                 Self::parse_road_reference_line(road, road_node);
             }
         }
-        for s in road.ref_line.s0_to_geometry.keys().into_iter() {
-            let geom = road.ref_line.s0_to_geometry.get(&s).unwrap();
-        }
     }
 
     fn parse_road_reference_line(road: &mut Road, road_node: &mut roxmltree::Node) {
-        let elevation_profile_node = road_node
+        let elevation_profile_node_opt = road_node
             .children()
-            .find(|&node| node.has_tag_name("elevationProfile"))
-            .unwrap();
+            .find(|&node| node.has_tag_name("elevationProfile"));
 
         let laneoffset_node = road_node
             .children()
@@ -192,38 +188,40 @@ impl Road {
             .elevation_profile
             .append_poly3(0.0, Poly3::new(0.0, 0.0, 0.0, 0.0));
 
-        for elevation_node in elevation_profile_node.children() {
-            if !elevation_node.has_tag_name("elevation") {
-                continue;
+        if let Some(elevation_profile_node) = elevation_profile_node_opt {
+            for elevation_node in elevation_profile_node.children() {
+                if !elevation_node.has_tag_name("elevation") {
+                    continue;
+                }
+                let s0 = elevation_node
+                    .attribute("s")
+                    .unwrap_or("0.0")
+                    .parse()
+                    .unwrap();
+                let a = elevation_node
+                    .attribute("a")
+                    .unwrap_or("0.0")
+                    .parse()
+                    .unwrap();
+                let b = elevation_node
+                    .attribute("b")
+                    .unwrap_or("0.0")
+                    .parse()
+                    .unwrap();
+                let c = elevation_node
+                    .attribute("c")
+                    .unwrap_or("0.0")
+                    .parse()
+                    .unwrap();
+                let d = elevation_node
+                    .attribute("d")
+                    .unwrap_or("0.0")
+                    .parse()
+                    .unwrap();
+                road.ref_line
+                    .elevation_profile
+                    .append_poly3(s0, Poly3::new(a, b, c, d));
             }
-            let s0 = elevation_node
-                .attribute("s")
-                .unwrap_or("0.0")
-                .parse()
-                .unwrap();
-            let a = elevation_node
-                .attribute("a")
-                .unwrap_or("0.0")
-                .parse()
-                .unwrap();
-            let b = elevation_node
-                .attribute("b")
-                .unwrap_or("0.0")
-                .parse()
-                .unwrap();
-            let c = elevation_node
-                .attribute("c")
-                .unwrap_or("0.0")
-                .parse()
-                .unwrap();
-            let d = elevation_node
-                .attribute("d")
-                .unwrap_or("0.0")
-                .parse()
-                .unwrap();
-            road.ref_line
-                .elevation_profile
-                .append_poly3(s0, Poly3::new(a, b, c, d));
         }
         road.lane_offset
             .append_poly3(0.0, Poly3::new(0.0, 0.0, 0.0, 0.0));
@@ -355,9 +353,9 @@ impl Road {
             .id_to_lane
             .get(&lanesection.get_lane_id(s, t))
             .unwrap();
-        let t_inner_brdr = lane.inner_border.get(s, 0.0, true);
 
         // TODO handle height here.
+        let _t_inner_brdr = lane.inner_border.get(s, 0.0, true);
         let h_t = 0.0;
 
         self.get_xyz(s, t, h_t, Some(vn))

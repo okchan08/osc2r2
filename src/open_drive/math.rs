@@ -1,7 +1,5 @@
 use std::hash::{Hash, Hasher};
 
-use ordered_float::OrderedFloat;
-
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct ApproxF64(f64);
 
