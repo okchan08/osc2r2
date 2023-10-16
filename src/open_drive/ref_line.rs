@@ -3,16 +3,29 @@ use crate::open_drive::geometry::road_geometry::RoadGeometry;
 
 use ordered_float::OrderedFloat;
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    fmt::Debug,
+};
 
 use super::{math::Vec2, math::Vec3};
 
-#[derive(Debug)]
 pub struct RefLine {
     pub road_id: String,
     pub length: f64,
     pub elevation_profile: CubicSpline,
-    pub s0_to_geometry: BTreeMap<OrderedFloat<f64>, Box<dyn RoadGeometry>>,
+    pub s0_to_geometry: BTreeMap<OrderedFloat<f64>, Box<dyn RoadGeometry + Send + Sync>>,
+}
+
+impl Debug for RefLine {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("RefLine")
+            .field("road_id", &self.road_id)
+            .field("length", &self.length)
+            .field("elevation_profile", &self.elevation_profile)
+            //.field("s0_to_geometry", &self.s0_to_geometry)  TODO (fix this debug for geometry)
+            .finish()
+    }
 }
 
 impl RefLine {
@@ -25,7 +38,11 @@ impl RefLine {
         }
     }
 
-    pub fn append_road_geometry(&mut self, key: f64, geometry: Box<dyn RoadGeometry>) {
+    pub fn append_road_geometry(
+        &mut self,
+        key: f64,
+        geometry: Box<dyn RoadGeometry + Send + Sync>,
+    ) {
         self.s0_to_geometry.insert(OrderedFloat(key), geometry);
     }
 
@@ -88,7 +105,7 @@ impl RefLine {
              .0
     }
 
-    pub fn get_geometry(&self, s: f64) -> Option<&Box<dyn RoadGeometry>> {
+    pub fn get_geometry(&self, s: f64) -> Option<&Box<dyn RoadGeometry + Send + Sync>> {
         let geom_s0 = self.get_geometry_s0(s);
         if geom_s0.is_nan() {
             return None;

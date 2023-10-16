@@ -3,15 +3,23 @@ use osc2r2;
 use bevy::{
     input::mouse::{MouseMotion, MouseWheel},
     pbr::wireframe::{Wireframe, WireframeConfig, WireframePlugin},
-    prelude::*,
+    prelude::{shape::Box, *},
     render::render_resource::{PrimitiveTopology, WgpuFeatures},
     render::settings::WgpuSettings,
     render::{mesh, RenderPlugin},
 };
 
+#[derive(Resource)]
+struct BevyOpenDriveWrapper(osc2r2::open_drive::open_drive::OpenDrive);
+
 fn main() {
+    let odr = BevyOpenDriveWrapper(osc2r2::open_drive::open_drive::OpenDrive::parse_open_drive(
+        "./Town04.xodr",
+    ));
+
     App::new()
         .insert_resource(ClearColor(Color::DARK_GRAY))
+        .insert_resource(odr)
         .add_plugins((
             DefaultPlugins.set(RenderPlugin {
                 wgpu_settings: WgpuSettings {
@@ -22,7 +30,7 @@ fn main() {
             WireframePlugin,
         ))
         .add_systems(Startup, setup)
-        .add_systems(Update, pan_orbit_camera)
+        .add_systems(Update, (pan_orbit_camera, update_actor))
         .run();
 }
 
@@ -138,15 +146,22 @@ fn get_primary_window_size(window: &Window) -> Vec2 {
     Vec2::new(window.width(), window.height())
 }
 
+#[derive(Component)]
+struct Actor {
+    pub road_id: String,
+    pub lane_id: i32,
+    pub s: f64,
+    pub height: f32,
+}
+
 fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
+    odr: Res<BevyOpenDriveWrapper>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut wireframe_config: ResMut<WireframeConfig>,
 ) {
-    let odr = osc2r2::open_drive::open_drive::OpenDrive::parse_open_drive("./Town04.xodr");
-
-    let road_mesh = odr.get_road_network_mesh(0.1);
+    let road_mesh = odr.0.get_road_network_mesh(0.1);
     let to_debug = false;
 
     if to_debug {
@@ -261,4 +276,76 @@ fn setup(
     }
 
     commands.spawn(DirectionalLightBundle::default());
+
+    let spawn_transform = odr.0.get_road_transform(&"52".to_string(), 1, 0.0).unwrap();
+    let spawn_direction = &spawn_transform.direction();
+    // Bevy coordinate system is Y up
+    let length = 2.5;
+    let width = 1.0;
+    let height = 1.0;
+    let box_mesh = meshes.add(Box::new(width, height, length).try_into().unwrap());
+
+    let mut transform = Transform::from_xyz(
+        spawn_transform.position().0 as f32,
+        spawn_transform.position().1 as f32,
+        spawn_transform.position().2 as f32 + height / 2.0,
+    );
+
+    transform.look_to(
+        Vec3::new(
+            spawn_direction.0 as f32,
+            spawn_direction.1 as f32,
+            spawn_direction.2 as f32,
+        ),
+        Vec3::Y,
+    );
+
+    commands.spawn((
+        PbrBundle {
+            mesh: box_mesh.clone(),
+            transform: transform,
+            material: materials.add(Color::rgba(1.0, 0.0, 0.0, 1.0).into()),
+            ..default()
+        },
+        Actor {
+            road_id: "52".to_string(),
+            lane_id: 1,
+            s: 20.0,
+            height: height,
+        },
+    ));
+}
+
+fn update_actor(
+    time: Res<Time>,
+    odr: Res<BevyOpenDriveWrapper>,
+    mut query: Query<(&mut Transform, &mut Actor), With<Actor>>,
+) {
+    let speed = 1.0;
+
+    for (mut transform, mut actor) in query.iter_mut() {
+        let s = actor.s + speed * time.delta_seconds_f64();
+        let spawn_transform = odr
+            .0
+            .get_road_transform(&actor.road_id, actor.lane_id, s)
+            .unwrap();
+        let spawn_direction = &spawn_transform.direction();
+
+        *transform = Transform::from_xyz(
+            spawn_transform.position().0 as f32,
+            spawn_transform.position().1 as f32,
+            spawn_transform.position().2 as f32 + actor.height / 2.0,
+        );
+
+        transform.look_to(
+            Vec3::new(
+                spawn_direction.0 as f32,
+                spawn_direction.1 as f32,
+                spawn_direction.2 as f32,
+            ),
+            Vec3::Y,
+        );
+
+        actor.s = s;
+    }
 }

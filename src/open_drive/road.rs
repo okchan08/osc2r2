@@ -464,4 +464,8 @@ impl Road {
         }
         Mat3D::mat_vec_multiplication(&trans_mat, &Vec3::new(t, h, 1.0))
     }
+
+    pub fn get_direction(&self, s: f64) -> Vec3 {
+        self.ref_line.get_grad(s).normalize()
+    }
 }
