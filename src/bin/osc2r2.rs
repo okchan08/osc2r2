@@ -1,22 +1,21 @@
 use ordered_float::OrderedFloat;
 use osc2r2::{self, open_drive::lane::LaneKey};
 
+use osc2r2::bevy::bridge::BevyOpenDriveWrapper;
+
 use bevy::{
     input::mouse::{MouseMotion, MouseWheel},
-    pbr::wireframe::{WireframeConfig, WireframePlugin},
+    pbr::wireframe::WireframePlugin,
     prelude::{shape::Box, *},
     render::render_resource::{PrimitiveTopology, WgpuFeatures},
     render::settings::WgpuSettings,
     render::{mesh, RenderPlugin},
 };
 
-#[derive(Resource)]
-struct BevyOpenDriveWrapper(osc2r2::open_drive::OpenDrive);
-
 fn main() {
-    let odr = BevyOpenDriveWrapper(osc2r2::open_drive::OpenDrive::parse_open_drive(
-        "./Town04.xodr",
-    ));
+    let odr = BevyOpenDriveWrapper {
+        open_drive: osc2r2::open_drive::OpenDrive::parse_open_drive("./Town04.xodr"),
+    };
 
     App::new()
         .insert_resource(ClearColor(Color::DARK_GRAY))
@@ -30,8 +29,8 @@ fn main() {
             }),
             WireframePlugin,
         ))
-        .add_systems(Startup, setup)
-        .add_systems(Update, (follow_orbit_camera, update_actor))
+        .add_systems(Startup, (setup_world, setup_actors.after(setup_world)))
+        .add_systems(Update, (PanOrbitCamera::follow_orbit_camera, update_actor))
         .run();
 }
 
@@ -50,56 +49,58 @@ impl Default for PanOrbitCamera {
     }
 }
 
-#[allow(clippy::type_complexity)]
-fn follow_orbit_camera(
-    windows: Query<&Window>,
-    actors: Query<&Transform, With<Actor>>,
-    mut query: Query<(&mut PanOrbitCamera, &mut Transform), (With<Camera>, Without<Actor>)>,
-    input_mouse: Res<Input<MouseButton>>,
-    mut ev_scroll: EventReader<MouseWheel>,
-    mut ev_motion: EventReader<MouseMotion>,
-) {
-    let Ok(actor_transform) = actors.get_single() else {return};
-    let Ok((mut camera, mut camera_transform)) = query.get_single_mut() else {return};
+impl PanOrbitCamera {
+    #[allow(clippy::type_complexity)]
+    fn follow_orbit_camera(
+        windows: Query<&Window>,
+        actors: Query<&Transform, With<Actor>>,
+        mut query: Query<(&mut PanOrbitCamera, &mut Transform), (With<Camera>, Without<Actor>)>,
+        input_mouse: Res<Input<MouseButton>>,
+        mut ev_scroll: EventReader<MouseWheel>,
+        mut ev_motion: EventReader<MouseMotion>,
+    ) {
+        let Ok(actor_transform) = actors.get_single() else {return};
+        let Ok((mut camera, mut camera_transform)) = query.get_single_mut() else {return};
 
-    let delta = actor_transform.translation - camera.focus;
-    let mut scroll = 0.0;
-    let mut rotation_move = Vec2::ZERO;
-    let mut any = false;
-    let rotation_button = MouseButton::Left;
-    if input_mouse.pressed(rotation_button) {
-        for ev in ev_motion.iter() {
-            rotation_move += ev.delta / 2.0;
+        let delta = actor_transform.translation - camera.focus;
+        let mut scroll = 0.0;
+        let mut rotation_move = Vec2::ZERO;
+        let mut any = false;
+        let rotation_button = MouseButton::Left;
+        if input_mouse.pressed(rotation_button) {
+            for ev in ev_motion.iter() {
+                rotation_move += ev.delta / 2.0;
+            }
         }
-    }
-    for ev in ev_scroll.iter() {
-        scroll += ev.y / 10.0;
-    }
-    if rotation_move.length_squared() > 0.0 {
-        any = true;
-        let window = get_primary_window_size(windows.single());
-        let delta_x = rotation_move.x / window.x * std::f32::consts::PI * 2.0;
-        let delta_y = rotation_move.y / window.y * std::f32::consts::PI;
-        let yaw = Quat::from_rotation_y(-delta_x);
-        let pitch = Quat::from_rotation_x(-delta_y);
-        camera_transform.rotation = camera_transform.rotation * yaw * pitch;
-    } else if scroll.abs() > 0.0 {
-        any = true;
-        camera.radius -= scroll * camera.radius * 0.2;
-        // dont allow zoom to reach zero or you get stuck
-        camera.radius = f32::max(camera.radius, 0.05);
-    }
+        for ev in ev_scroll.iter() {
+            scroll += ev.y / 10.0;
+        }
+        if rotation_move.length_squared() > 0.0 {
+            any = true;
+            let window = get_primary_window_size(windows.single());
+            let delta_x = rotation_move.x / window.x * std::f32::consts::PI * 2.0;
+            let delta_y = rotation_move.y / window.y * std::f32::consts::PI;
+            let yaw = Quat::from_rotation_y(-delta_x);
+            let pitch = Quat::from_rotation_x(-delta_y);
+            camera_transform.rotation = camera_transform.rotation * yaw * pitch;
+        } else if scroll.abs() > 0.0 {
+            any = true;
+            camera.radius -= scroll * camera.radius * 0.2;
+            // dont allow zoom to reach zero or you get stuck
+            camera.radius = f32::max(camera.radius, 0.05);
+        }
 
-    if delta != Vec3::ZERO {
-        any = true;
-        camera.focus = actor_transform.translation;
-        camera_transform.translation += delta;
-    }
+        if delta != Vec3::ZERO {
+            any = true;
+            camera.focus = actor_transform.translation;
+            camera_transform.translation += delta;
+        }
 
-    if any {
-        let rot_matrix = Mat3::from_quat(camera_transform.rotation);
-        camera_transform.translation =
-            camera.focus + rot_matrix.mul_vec3(Vec3::new(0.0, 0.0, camera.radius));
+        if any {
+            let rot_matrix = Mat3::from_quat(camera_transform.rotation);
+            camera_transform.translation =
+                camera.focus + rot_matrix.mul_vec3(Vec3::new(0.0, 0.0, camera.radius));
+        }
     }
 }
 
@@ -114,37 +115,13 @@ struct Actor {
     pub height: f32,
 }
 
-fn setup(
+fn setup_world(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     odr: Res<BevyOpenDriveWrapper>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut wireframe_config: ResMut<WireframeConfig>,
 ) {
-    let road_mesh = odr.0.get_road_network_mesh(0.1);
-    let to_debug = false;
-
-    if to_debug {
-        wireframe_config.global = true;
-        println!(
-            "#vtx: {:?}   #idx: {:?}",
-            road_mesh.lane_mesh.mesh.vertices.len(),
-            road_mesh.lane_mesh.mesh.indicies.len()
-        );
-
-        println!("{:?}", road_mesh.lane_mesh.mesh.indicies);
-
-        for i in (0..road_mesh.lane_mesh.mesh.indicies.len()).step_by(3) {
-            let i0 = road_mesh.lane_mesh.mesh.indicies.get(i).unwrap();
-            let i1 = road_mesh.lane_mesh.mesh.indicies.get(i + 1).unwrap();
-            let i2 = road_mesh.lane_mesh.mesh.indicies.get(i + 2).unwrap();
-            let pos0 = road_mesh.lane_mesh.mesh.vertices.get(*i0 as usize).unwrap();
-            let pos1 = road_mesh.lane_mesh.mesh.vertices.get(*i1 as usize).unwrap();
-            let pos2 = road_mesh.lane_mesh.mesh.vertices.get(*i2 as usize).unwrap();
-            println!("{:?}  {:?}  {:?}", pos0, pos1, pos2);
-        }
-    }
-
+    let road_mesh = odr.open_drive.get_road_network_mesh(0.1);
     let translation = Vec3::new(10.0, 3.0, 40.0);
     let radius = translation.length();
 
@@ -201,7 +178,7 @@ fn setup(
         road_mesh.road_mark_mesh.mesh.get_bevy_mesh_uv(),
     );
     roadmark_mesh.set_indices(Some(mesh::Indices::U32(
-        road_mesh.road_mark_mesh.mesh.indicies.clone(),
+        road_mesh.road_mark_mesh.mesh.indicies,
     )));
 
     commands.spawn((PbrBundle {
@@ -210,28 +187,19 @@ fn setup(
         ..default()
     },));
 
-    if to_debug {
-        // debug mesh vertex
-        let ball = meshes.add(
-            shape::Icosphere {
-                radius: 0.1,
-                subdivisions: 5,
-            }
-            .try_into()
-            .unwrap(),
-        );
-        for pos in road_mesh.lane_mesh.mesh.get_bevy_mesh_position(0.0).iter() {
-            commands.spawn(PbrBundle {
-                mesh: ball.clone(),
-                transform: Transform::from_xyz(pos.x, pos.y, pos.z),
-                ..default()
-            });
-        }
-    }
-
     commands.spawn(DirectionalLightBundle::default());
+}
 
-    let spawn_transform = odr.0.get_road_transform(&"52".to_string(), 1, 0.0).unwrap();
+fn setup_actors(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    odr: Res<BevyOpenDriveWrapper>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let spawn_transform = odr
+        .open_drive
+        .get_road_transform(&"52".to_string(), 1, 0.0)
+        .unwrap();
     let spawn_direction = &spawn_transform.direction();
     // Bevy coordinate system is Y up
     let length = 2.5;
@@ -283,10 +251,11 @@ fn update_actor(
     for (mut transform, mut actor) in query.iter_mut() {
         let ds = speed * time.delta_seconds_f64();
         if let Some((lane_key, next_s)) =
-            odr.0.evaluate_road_ds(&actor.lane_key.clone(), actor.s, ds)
+            odr.open_drive
+                .evaluate_road_ds(&actor.lane_key.clone(), actor.s, ds)
         {
             let Some(spawn_transform) =
-                odr.0
+                odr.open_drive
                     .get_road_transform(&lane_key.road_id, lane_key.lane_id, next_s) else {return;};
             // TODO fix lane id
             let spawn_direction = &spawn_transform.direction();
