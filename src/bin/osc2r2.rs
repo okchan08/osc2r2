@@ -31,7 +31,7 @@ fn main() {
             WireframePlugin,
         ))
         .add_systems(Startup, setup)
-        .add_systems(Update, (pan_orbit_camera, update_actor))
+        .add_systems(Update, (follow_orbit_camera, update_actor))
         .run();
 }
 
@@ -52,95 +52,56 @@ impl Default for PanOrbitCamera {
     }
 }
 
-fn pan_orbit_camera(
+fn follow_orbit_camera(
     windows: Query<&Window>,
+    actors: Query<&Transform, With<Actor>>,
+    mut query: Query<(&mut PanOrbitCamera, &mut Transform), (With<Camera>, Without<Actor>)>,
     input_mouse: Res<Input<MouseButton>>,
-    mut ev_motion: EventReader<MouseMotion>,
     mut ev_scroll: EventReader<MouseWheel>,
-    mut query: Query<(&mut PanOrbitCamera, &mut Transform, &Projection), With<Camera>>,
+    mut ev_motion: EventReader<MouseMotion>,
 ) {
-    let orbit_button = MouseButton::Right;
-    let pan_button = MouseButton::Left;
+    let Ok(actor_transform) = actors.get_single() else {return};
+    let Ok((mut camera, mut camera_transform)) = query.get_single_mut() else {return};
 
-    let mut pan = Vec2::ZERO;
-    let mut rotation_move = Vec2::ZERO;
+    let delta = actor_transform.translation - camera.focus;
     let mut scroll = 0.0;
-    let mut orbit_button_changed = false;
-
-    if input_mouse.pressed(orbit_button) {
+    let mut rotation_move = Vec2::ZERO;
+    let mut any = false;
+    let rotation_button = MouseButton::Left;
+    if input_mouse.pressed(rotation_button) {
         for ev in ev_motion.iter() {
             rotation_move += ev.delta / 2.0;
         }
-    } else if input_mouse.pressed(pan_button) {
-        for ev in ev_motion.iter() {
-            pan += ev.delta / 2.0;
-        }
     }
-
     for ev in ev_scroll.iter() {
         scroll += ev.y / 10.0;
     }
-
-    if input_mouse.just_released(orbit_button) || input_mouse.just_pressed(orbit_button) {
-        orbit_button_changed = true;
+    if rotation_move.length_squared() > 0.0 {
+        any = true;
+        let window = get_primary_window_size(windows.single());
+        let delta_x = rotation_move.x / window.x * std::f32::consts::PI * 2.0;
+        let delta_y = rotation_move.y / window.y * std::f32::consts::PI;
+        let yaw = Quat::from_rotation_y(-delta_x);
+        let pitch = Quat::from_rotation_x(-delta_y);
+        camera_transform.rotation = camera_transform.rotation * pitch * yaw;
+    } else if scroll.abs() > 0.0 {
+        any = true;
+        camera.radius -= scroll * camera.radius * 0.2;
+        // dont allow zoom to reach zero or you get stuck
+        camera.radius = f32::max(camera.radius, 0.05);
     }
 
-    for (mut pan_orbit, mut transform, projection) in query.iter_mut() {
-        if orbit_button_changed {
-            // only check for upside down when orbiting started or ended this frame
-            // if the camera is "upside" down, panning horizontally would be inverted, so invert the input to make it correct
-            let up = transform.rotation * Vec3::Y;
-            pan_orbit.upside_down = up.y <= 0.0;
-        }
-
-        let mut any = false;
-        if rotation_move.length_squared() > 0.0 {
-            any = true;
-            let window = get_primary_window_size(windows.single());
-            let delta_x = {
-                let delta = rotation_move.x / window.x * std::f32::consts::PI * 2.0;
-                if pan_orbit.upside_down {
-                    -delta
-                } else {
-                    delta
-                }
-            };
-            let delta_y = rotation_move.y / window.y * std::f32::consts::PI;
-            let pitch = Quat::from_rotation_x(-delta_x);
-            let yaw = Quat::from_rotation_y(-delta_y);
-            transform.rotation = yaw * transform.rotation; // rotate around global y axis
-            transform.rotation = pitch * transform.rotation; // rotate around global x axis
-        } else if pan.length_squared() > 0.0 {
-            any = true;
-            // make panning distance independent of resolution and FOV,
-            let window = get_primary_window_size(windows.single());
-            if let Projection::Perspective(projection) = projection {
-                pan *= Vec2::new(projection.fov * projection.aspect_ratio, projection.fov) / window;
-            }
-            // translate by local axes
-            let right = transform.rotation * Vec3::X * -pan.x;
-            let up = transform.rotation * Vec3::Y * pan.y;
-            // make panning proportional to distance away from focus point
-            let translation = (right + up) * pan_orbit.radius;
-            pan_orbit.focus += translation;
-        } else if scroll.abs() > 0.0 {
-            any = true;
-            pan_orbit.radius -= scroll * pan_orbit.radius * 0.2;
-            // dont allow zoom to reach zero or you get stuck
-            pan_orbit.radius = f32::max(pan_orbit.radius, 0.05);
-        }
-        if any {
-            // emulating parent/child to make the yaw/y-axis rotation behave like a turntable
-            // parent = x and y rotation
-            // child = z-offset
-            let rot_matrix = Mat3::from_quat(transform.rotation);
-            transform.translation =
-                pan_orbit.focus + rot_matrix.mul_vec3(Vec3::new(0.0, 0.0, pan_orbit.radius));
-        }
+    if delta != Vec3::ZERO {
+        any = true;
+        camera.focus = actor_transform.translation;
+        camera_transform.translation += delta;
     }
-    // consume any remaining events, so they don't pile up if we don't need them
-    // (and also to avoid Bevy warning us about not checking events every frame update)
-    ev_motion.clear();
+
+    if any {
+        let rot_matrix = Mat3::from_quat(camera_transform.rotation);
+        camera_transform.translation =
+            camera.focus + rot_matrix.mul_vec3(Vec3::new(0.0, 0.0, camera.radius));
+    }
 }
 
 fn get_primary_window_size(window: &Window) -> Vec2 {
@@ -185,7 +146,7 @@ fn setup(
         }
     }
 
-    let translation = Vec3::new(500.0, 25.0, 50.0);
+    let translation = Vec3::new(10.0, 3.0, 40.0);
     let radius = translation.length();
 
     commands.spawn((
