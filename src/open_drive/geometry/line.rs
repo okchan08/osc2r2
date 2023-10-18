@@ -40,6 +40,6 @@ impl RoadGeometry for Line {
     }
 
     fn geometry_type(&self) -> GeometryType {
-        GeometryType::GeometryTypeLine
+        GeometryType::Line
     }
 }

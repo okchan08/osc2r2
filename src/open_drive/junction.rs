@@ -14,6 +14,8 @@ pub struct JunctionConnectionInformation {
 
     pub lane_links: BTreeSet<JunctionLaneLink>,
 }
+
+#[allow(dead_code)]
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum JunctionConnection {
     None(JunctionConnectionInformation),

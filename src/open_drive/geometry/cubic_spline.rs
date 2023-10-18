@@ -41,7 +41,7 @@ impl Poly3 {
             let mut s = s_start;
             while s < s_end {
                 s_vals.push(s);
-                s = s + f64::abs(eps / self.c).sqrt();
+                s += f64::abs(eps / self.c).sqrt();
             }
         } else {
             todo!();
@@ -88,18 +88,12 @@ impl Poly3 {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct CubicSpline {
     s0_to_poly: BTreeMap<OrderedFloat<f64>, Poly3>,
 }
 
 impl CubicSpline {
-    pub fn new() -> Self {
-        CubicSpline {
-            s0_to_poly: BTreeMap::new(),
-        }
-    }
-
     pub fn add(&self, other: &CubicSpline) -> Self {
         if self.s0_to_poly.is_empty() {
             return other.clone();
@@ -111,18 +105,16 @@ impl CubicSpline {
         let mut s0_vals = self
             .s0_to_poly
             .keys()
-            .into_iter()
-            .map(|&key| key.clone())
+            .copied()
             .collect::<BTreeSet<OrderedFloat<f64>>>();
         let mut other_s0 = other
             .s0_to_poly
             .keys()
-            .into_iter()
-            .map(|&key| key.clone())
+            .copied()
             .collect::<BTreeSet<OrderedFloat<f64>>>();
         s0_vals.append(&mut other_s0);
 
-        let mut retval = Self::new();
+        let mut retval = Self::default();
 
         for s0 in s0_vals.into_iter() {
             let this_poly = self.get_poly(s0.0, false);
@@ -176,7 +168,7 @@ impl CubicSpline {
 
         if s < first_poly.0 .0 {
             if extend_start {
-                return first_poly.1.clone();
+                return *first_poly.1;
             } else {
                 return nan_poly;
             }
@@ -185,7 +177,7 @@ impl CubicSpline {
         let last_poly = self.s0_to_poly.last_key_value().unwrap();
 
         if s >= last_poly.0 .0 {
-            return last_poly.1.clone();
+            return *last_poly.1;
         }
 
         let mut s0_poly_iter = self.s0_to_poly.iter().peekable();
@@ -197,7 +189,7 @@ impl CubicSpline {
                  .0;
 
             if s0.0 <= s && s < next_s0 {
-                return poly.clone();
+                return *poly;
             }
         }
         // invalid poly result found!

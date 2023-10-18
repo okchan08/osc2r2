@@ -3,7 +3,7 @@ use ordered_float::OrderedFloat;
 use roxmltree;
 use std::collections::BTreeSet;
 
-#[derive(Debug, PartialEq, PartialOrd, Eq, Ord)]
+#[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Default)]
 pub struct RoadMarkLine {
     pub road_id: String,
     pub lanesection_s0: OrderedFloat<f64>,
@@ -59,7 +59,7 @@ impl RoadMarkGroup {
         let mut roadmark_group = RoadMarkGroup {
             road_id: road_id.to_owned(),
             lanesection_s0: OrderedFloat(lanesection_s0),
-            lane_id: lane_id,
+            lane_id,
             width: OrderedFloat(parse_node_attribute(roadmark_node, "width", -1.0)),
             height: OrderedFloat(parse_node_attribute(roadmark_node, "height", 0.0)),
             s_offset: OrderedFloat(parse_node_attribute(roadmark_node, "sOffset", 0.0)),
@@ -93,7 +93,7 @@ impl RoadMarkGroup {
                 let roadmark_line = RoadMarkLine {
                     road_id: road_id.to_owned(),
                     lanesection_s0: OrderedFloat(lanesection_s0),
-                    lane_id: lane_id,
+                    lane_id,
                     group_s0: OrderedFloat(roadmark_group_s0),
                     width: OrderedFloat(roadmark_width),
                     length: OrderedFloat(parse_node_attribute(&roadmark_line_node, "length", 0.0)),

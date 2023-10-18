@@ -2,7 +2,7 @@ use crate::open_drive::math::{Vec2, Vec3};
 use std::collections::HashMap;
 use std::vec::Vec;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Mesh3D {
     pub vertices: Vec<Vec3>,
     pub indicies: Vec<u32>,
@@ -11,15 +11,6 @@ pub struct Mesh3D {
 }
 
 impl Mesh3D {
-    pub fn new() -> Self {
-        Self {
-            vertices: vec![],
-            indicies: vec![],
-            normals: vec![],
-            st_coordinates: vec![],
-        }
-    }
-
     pub fn add_mesh(&mut self, other: &Mesh3D) {
         let idx_offset = self.vertices.len() as u32;
 
@@ -59,22 +50,13 @@ impl Mesh3D {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct RoadMesh {
     pub mesh: Mesh3D,
     pub road_start_indicies: HashMap<usize, String>,
 }
 
-impl RoadMesh {
-    pub fn new() -> Self {
-        Self {
-            mesh: Mesh3D::new(),
-            road_start_indicies: HashMap::new(),
-        }
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct LaneMesh {
     pub mesh: Mesh3D,
     pub road_start_indicies: HashMap<usize, String>,
@@ -82,36 +64,13 @@ pub struct LaneMesh {
     pub lane_start_indices: HashMap<usize, i32>,
 }
 
-impl LaneMesh {
-    pub fn new() -> Self {
-        LaneMesh {
-            mesh: Mesh3D::new(),
-            road_start_indicies: HashMap::new(),
-            lanesec_start_indices: HashMap::new(),
-            lane_start_indices: HashMap::new(),
-        }
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct RoadMarkMesh {
     pub mesh: Mesh3D,
     pub road_start_indicies: HashMap<usize, String>,
     pub lanesec_start_indices: HashMap<usize, f64>,
     pub lane_start_indices: HashMap<usize, i32>,
     pub roadmark_type_start_indicies: HashMap<usize, String>,
-}
-
-impl RoadMarkMesh {
-    pub fn new() -> Self {
-        Self {
-            mesh: Mesh3D::new(),
-            road_start_indicies: HashMap::new(),
-            lanesec_start_indices: HashMap::new(),
-            lane_start_indices: HashMap::new(),
-            roadmark_type_start_indicies: HashMap::new(),
-        }
-    }
 }
 
 #[derive(Debug)]
@@ -122,7 +81,7 @@ pub struct RoadNetworkMesh {
 
 impl RoadNetworkMesh {
     pub fn get_mesh(&self) -> Mesh3D {
-        let mut out_mesh = Mesh3D::new();
+        let mut out_mesh = Mesh3D::default();
 
         out_mesh.add_mesh(&self.lane_mesh.mesh);
         out_mesh

@@ -1,9 +1,7 @@
-use bevy::reflect::list_hash;
 use roxmltree;
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::ops::Bound;
-use std::slice::Windows;
 
 use ordered_float::OrderedFloat;
 
@@ -49,7 +47,7 @@ impl Road {
             let mut road_id = road_node.attribute("id").unwrap_or("").to_string();
             if results.contains_key(&road_id) {
                 println!("road id {} already exists", road_id);
-                road_id = road_id + "_duplicated";
+                road_id += "_duplicated";
             }
             let rule = road_node
                 .attribute("rule")
@@ -64,11 +62,11 @@ impl Road {
                 .unwrap();
             let mut road = Road {
                 id: road_id.to_owned(),
-                length: length,
+                length,
                 name: road_node.attribute("name").unwrap_or("").to_string(),
-                is_rht: is_rht,
-                lane_offset: CubicSpline::new(),
-                superelevation: CubicSpline::new(),
+                is_rht,
+                lane_offset: CubicSpline::default(),
+                superelevation: CubicSpline::default(),
                 ref_line: RefLine::new(&road_id, &length),
                 s_to_lanesection: BTreeMap::new(),
                 predecessor: None,
@@ -123,7 +121,7 @@ impl Road {
                 let type_str = link_node.attribute("elementType").unwrap_or("");
                 let contact_point_str = link_node.attribute("contactPoint").unwrap_or("");
                 let road_link = RoadLink {
-                    id: id,
+                    id,
                     link_type: if type_str == "road" {
                         RoadLinkType::Road
                     } else {
@@ -183,7 +181,6 @@ impl Road {
 
                 let geometry_node = geometry_hdr_node
                     .children()
-                    .into_iter()
                     .find(|&node| node.tag_name().name() != "")
                     .unwrap();
                 let geometry_type = geometry_node
@@ -193,10 +190,10 @@ impl Road {
                     .unwrap();
 
                 match geometry_type {
-                    GeometryType::GeometryTypeLine => road
+                    GeometryType::Line => road
                         .ref_line
                         .append_road_geometry(s0, Box::new(Line::new(s0, x0, y0, hdg0, length))),
-                    GeometryType::GeometryTypeArc => {
+                    GeometryType::Arc => {
                         let curvature = geometry_node
                             .attribute("curvature")
                             .unwrap()
@@ -207,7 +204,7 @@ impl Road {
                             Box::new(Arc::new(s0, x0, y0, hdg0, length, curvature)),
                         );
                     }
-                    GeometryType::GeometryTypeSpiral => {
+                    GeometryType::Spiral => {
                         let curv_start = geometry_node
                             .attribute("curvStart")
                             .unwrap_or("0.0")
@@ -324,17 +321,17 @@ impl Road {
     fn get_lane_mesh_in_s_range(&self, lane: &Lane, s_start: f64, s_end: f64, eps: f64) -> Mesh3D {
         let mut s_vals = self.ref_line.approximate_linear(eps, s_start, s_end);
         let s_vals_outer_brdr = lane.outer_border.approximate_linear(eps, s_start, s_end);
-        s_vals.extend(s_vals_outer_brdr.into_iter().map(|val| OrderedFloat(val)));
+        s_vals.extend(s_vals_outer_brdr.into_iter().map(OrderedFloat));
         let s_vals_inner_brdr = lane.inner_border.approximate_linear(eps, s_start, s_end);
-        s_vals.extend(s_vals_inner_brdr.into_iter().map(|val| OrderedFloat(val)));
+        s_vals.extend(s_vals_inner_brdr.into_iter().map(OrderedFloat));
         let s_vals_lane_offset = self.lane_offset.approximate_linear(eps, s_start, s_end);
-        s_vals.extend(s_vals_lane_offset.into_iter().map(|val| OrderedFloat(val)));
+        s_vals.extend(s_vals_lane_offset.into_iter().map(OrderedFloat));
 
         // TODO s vals for height
         // TODO s vals for super elevation
         // TODO clean up btree set
 
-        let mut out_mesh = Mesh3D::new();
+        let mut out_mesh = Mesh3D::default();
 
         for s_val in s_vals.iter() {
             let mut vn_inner_brdr = Vec3::new(0.0, 0.0, 0.0);
@@ -446,7 +443,7 @@ impl Road {
     pub fn get_roadmark_mesh(&self, lane: &Lane, roadmark: &RoadMark, eps: f64) -> Mesh3D {
         let s_vals =
             self.approximate_lane_border_linear(lane, roadmark.s_start, roadmark.s_end, eps, true);
-        let mut out_mesh = Mesh3D::new();
+        let mut out_mesh = Mesh3D::default();
 
         for s_val in s_vals {
             let mut vn_edge_a = Vec3::new(0.0, 0.0, 0.0);
@@ -491,12 +488,7 @@ impl Road {
             &lane.inner_border
         };
         let s_vals_brdr = border.approximate_linear(eps, s_start, s_end);
-        s_vals.append(
-            &mut s_vals_brdr
-                .into_iter()
-                .map(|val| OrderedFloat(val))
-                .collect(),
-        );
+        s_vals.append(&mut s_vals_brdr.into_iter().map(OrderedFloat).collect());
         // TODO handle height and superelevation here
         s_vals
     }
@@ -521,7 +513,7 @@ impl Road {
             Vec3::new(e_t.2, e_h.2, p0.2),
         );
         if let Some(eh) = _e_h {
-            *eh = e_h.clone();
+            *eh = e_h;
         }
         Mat3D::mat_vec_multiplication(&trans_mat, &Vec3::new(t, h, 1.0))
     }
@@ -538,6 +530,7 @@ pub enum RoadContactPoint {
     End,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, PartialEq, Eq)]
 pub enum RoadLinkType {
     None,

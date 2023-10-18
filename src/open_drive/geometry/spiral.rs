@@ -33,13 +33,13 @@ impl Spiral {
         curv_end: f64,
     ) -> Self {
         let mut spiral = Spiral {
-            s0: s0,
-            x0: x0,
-            y0: y0,
-            hdg0: hdg0,
-            length: length,
-            curv_start: curv_start,
-            curv_end: curv_end,
+            s0,
+            x0,
+            y0,
+            hdg0,
+            length,
+            curv_start,
+            curv_end,
             s_start: 0.0,
             s_end: 0.0,
             c_dot: 0.0,
@@ -93,7 +93,7 @@ impl RoadGeometry for Spiral {
     }
 
     fn geometry_type(&self) -> GeometryType {
-        GeometryType::GeometryTypeSpiral
+        GeometryType::Spiral
     }
 }
 
@@ -108,7 +108,7 @@ fn polevl(x: f64, coef: &[f64], n: usize) -> f64 {
         i -= 1;
         ans = ans * x + coef[i];
     }
-    return ans;
+    ans
 }
 
 fn p1evl(x: f64, coef: &[f64], n: usize) -> f64 {
@@ -126,6 +126,7 @@ fn p1evl(x: f64, coef: &[f64], n: usize) -> f64 {
 }
 
 /* S(x) for small x */
+#[allow(clippy::excessive_precision)]
 const SN: [f64; 6] = [
     -2.99181919401019853726E3,
     7.08840045257738576863E5,
@@ -134,6 +135,8 @@ const SN: [f64; 6] = [
     -4.42979518059697779103E10,
     3.18016297876567817986E11,
 ];
+
+#[allow(clippy::excessive_precision)]
 const SD: [f64; 6] = [
     /* 1.00000000000000000000E0,*/
     2.81376268889994315696E2,
@@ -145,6 +148,7 @@ const SD: [f64; 6] = [
 ];
 
 /* C(x) for small x */
+#[allow(clippy::excessive_precision)]
 const CN: [f64; 6] = [
     -4.98843114573573548651E-8,
     9.50428062829859605134E-6,
@@ -153,6 +157,8 @@ const CN: [f64; 6] = [
     -2.05525900955013891793E-1,
     9.99999999999999998822E-1,
 ];
+
+#[allow(clippy::excessive_precision)]
 const CD: [f64; 7] = [
     3.99982968972495980367E-12,
     9.15439215774657478799E-10,
@@ -164,6 +170,7 @@ const CD: [f64; 7] = [
 ];
 
 /* Auxiliary function f(x) */
+#[allow(clippy::excessive_precision)]
 const FNS: [f64; 10] = [
     4.21543555043677546506E-1,
     1.43407919780758885261E-1,
@@ -176,6 +183,8 @@ const FNS: [f64; 10] = [
     1.34283276233062758925E-16,
     3.76329711269987889006E-20,
 ];
+
+#[allow(clippy::excessive_precision)]
 const FD: [f64; 10] = [
     /*  1.00000000000000000000E0,*/
     7.51586398353378947175E-1,
@@ -191,6 +200,7 @@ const FD: [f64; 10] = [
 ];
 
 /* Auxiliary function g(x) */
+#[allow(clippy::excessive_precision)]
 const GN: [f64; 11] = [
     5.04442073643383265887E-1,
     1.97102833525523411709E-1,
@@ -204,6 +214,8 @@ const GN: [f64; 11] = [
     8.36354435630677421531E-19,
     1.86958710162783235106E-22,
 ];
+
+#[allow(clippy::excessive_precision)]
 const GD: [f64; 11] = [
     /*  1.00000000000000000000E0,*/
     1.47495759925128324529E0,
@@ -263,11 +275,11 @@ fn odr_spiral(s: f64, c_dot: f64) -> (f64, f64, f64) {
 
     let (mut y, mut x) = fresnel(s / a);
 
-    x = x * a;
-    y = y * a;
+    x *= a;
+    y *= a;
 
     if c_dot < 0.0 {
-        y = -1.0 * y;
+        y *= -1.0;
     }
 
     (x, y, s * s * c_dot * 0.5)

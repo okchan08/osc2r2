@@ -7,8 +7,8 @@ pub struct Transform {
 impl Transform {
     pub fn new(position: Vec3, direction: Vec3) -> Self {
         Self {
-            position: position,
-            direction: direction,
+            position,
+            direction,
         }
     }
 

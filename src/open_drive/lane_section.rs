@@ -25,7 +25,7 @@ impl LaneSection {
             .unwrap();
         let mut lanesection = LaneSection {
             road_id: parent_road.id.to_owned(),
-            s0: s0,
+            s0,
             s_end: f64::NAN,
             id_to_lane: Lane::parse_lanes(lanesection_node, &parent_road.id, s0),
         };
@@ -34,7 +34,7 @@ impl LaneSection {
     }
 
     fn derive_lane_borders(lanesection: &mut LaneSection, parent_road: &Road) {
-        let lane_id_0 = 0 as i32;
+        let lane_id_0 = 0_i32;
         if !lanesection.id_to_lane.contains_key(&lane_id_0) {
             panic!("lane section does not have lane #0");
         }
@@ -43,7 +43,6 @@ impl LaneSection {
         let positive_keys = lanesection
             .id_to_lane
             .keys()
-            .into_iter()
             .map(|key| key.to_owned())
             .filter(|&key| key >= 0)
             .collect::<Vec<i32>>();
@@ -51,7 +50,6 @@ impl LaneSection {
         let negative_keys = lanesection
             .id_to_lane
             .keys()
-            .into_iter()
             .rev()
             .map(|key| key.to_owned())
             .filter(|&key| key <= 0)
@@ -60,7 +58,7 @@ impl LaneSection {
         for (i, lane_id) in positive_keys.iter().enumerate() {
             if *lane_id == lane_id_0 {
                 assert!(i == 0);
-                let mut lane = lanesection.id_to_lane.get_mut(&lane_id).unwrap();
+                let mut lane = lanesection.id_to_lane.get_mut(lane_id).unwrap();
                 lane.outer_border = lane.lane_width.clone();
             } else {
                 let prev_lane_id = positive_keys[i - 1];
@@ -72,22 +70,22 @@ impl LaneSection {
                     .clone();
                 lanesection
                     .id_to_lane
-                    .get_mut(&lane_id)
+                    .get_mut(lane_id)
                     .unwrap()
                     .inner_border = prev_lane_outer_brdr.clone();
                 lanesection
                     .id_to_lane
-                    .get_mut(&lane_id)
+                    .get_mut(lane_id)
                     .unwrap()
                     .outer_border = prev_lane_outer_brdr
-                    .add(&lanesection.id_to_lane.get(&lane_id).unwrap().lane_width);
+                    .add(&lanesection.id_to_lane.get(lane_id).unwrap().lane_width);
             }
         }
 
         for (i, lane_id) in negative_keys.iter().enumerate() {
             if *lane_id == lane_id_0 {
                 assert!(i == 0);
-                let mut lane = lanesection.id_to_lane.get_mut(&lane_id).unwrap();
+                let mut lane = lanesection.id_to_lane.get_mut(lane_id).unwrap();
                 lane.outer_border = lane.lane_width.clone().negate();
             } else {
                 let prev_lane_id = negative_keys[i - 1];
@@ -99,17 +97,17 @@ impl LaneSection {
                     .clone();
                 lanesection
                     .id_to_lane
-                    .get_mut(&lane_id)
+                    .get_mut(lane_id)
                     .unwrap()
                     .inner_border = prev_lane_outer_brdr.clone();
                 lanesection
                     .id_to_lane
-                    .get_mut(&lane_id)
+                    .get_mut(lane_id)
                     .unwrap()
                     .outer_border = prev_lane_outer_brdr.add(
                     &lanesection
                         .id_to_lane
-                        .get(&lane_id)
+                        .get(lane_id)
                         .unwrap()
                         .lane_width
                         .negate(),
@@ -145,6 +143,6 @@ impl LaneSection {
             }
         }
         // TODO this lane id is wrong, need to fix the search algorithm.
-        return 0;
+        0
     }
 }

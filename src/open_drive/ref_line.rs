@@ -33,7 +33,7 @@ impl RefLine {
         Self {
             road_id: road_id.to_owned(),
             length: length.to_owned(),
-            elevation_profile: CubicSpline::new(),
+            elevation_profile: CubicSpline::default(),
             s0_to_geometry: BTreeMap::new(),
         }
     }
@@ -105,12 +105,17 @@ impl RefLine {
              .0
     }
 
-    pub fn get_geometry(&self, s: f64) -> Option<&Box<dyn RoadGeometry + Send + Sync>> {
+    pub fn get_geometry(&self, s: f64) -> Option<&(dyn RoadGeometry + Send + Sync)> {
         let geom_s0 = self.get_geometry_s0(s);
         if geom_s0.is_nan() {
             return None;
         }
-        Some(self.s0_to_geometry.get(&OrderedFloat(geom_s0)).unwrap())
+        Some(
+            self.s0_to_geometry
+                .get(&OrderedFloat(geom_s0))
+                .unwrap()
+                .as_ref(),
+        )
     }
 
     pub fn get_grad(&self, s: f64) -> Vec3 {

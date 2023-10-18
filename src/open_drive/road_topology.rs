@@ -10,7 +10,7 @@ pub struct RoadEdge {
     pub to: LaneKey,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct RoadTopology {
     edges: HashSet<RoadEdge>,
     lane_key_to_successors: HashMap<LaneKey, BTreeSet<LaneKey>>,
@@ -18,13 +18,6 @@ pub struct RoadTopology {
 }
 
 impl RoadTopology {
-    pub fn new() -> Self {
-        Self {
-            edges: HashSet::new(),
-            lane_key_to_successors: HashMap::new(),
-            lane_key_to_predessors: HashMap::new(),
-        }
-    }
     pub fn add_edge(&mut self, edge: RoadEdge) {
         match self.lane_key_to_successors.get_mut(&edge.from) {
             None => {

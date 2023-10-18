@@ -3,7 +3,7 @@ use osc2r2::{self, open_drive::lane::LaneKey};
 
 use bevy::{
     input::mouse::{MouseMotion, MouseWheel},
-    pbr::wireframe::{Wireframe, WireframeConfig, WireframePlugin},
+    pbr::wireframe::{WireframeConfig, WireframePlugin},
     prelude::{shape::Box, *},
     render::render_resource::{PrimitiveTopology, WgpuFeatures},
     render::settings::WgpuSettings,
@@ -11,10 +11,10 @@ use bevy::{
 };
 
 #[derive(Resource)]
-struct BevyOpenDriveWrapper(osc2r2::open_drive::open_drive::OpenDrive);
+struct BevyOpenDriveWrapper(osc2r2::open_drive::OpenDrive);
 
 fn main() {
-    let odr = BevyOpenDriveWrapper(osc2r2::open_drive::open_drive::OpenDrive::parse_open_drive(
+    let odr = BevyOpenDriveWrapper(osc2r2::open_drive::OpenDrive::parse_open_drive(
         "./Town04.xodr",
     ));
 
@@ -39,7 +39,6 @@ fn main() {
 struct PanOrbitCamera {
     pub focus: Vec3,
     pub radius: f32,
-    pub upside_down: bool,
 }
 
 impl Default for PanOrbitCamera {
@@ -47,11 +46,11 @@ impl Default for PanOrbitCamera {
         Self {
             focus: Vec3::ZERO,
             radius: 5.0,
-            upside_down: false,
         }
     }
 }
 
+#[allow(clippy::type_complexity)]
 fn follow_orbit_camera(
     windows: Query<&Window>,
     actors: Query<&Transform, With<Actor>>,
@@ -83,7 +82,7 @@ fn follow_orbit_camera(
         let delta_y = rotation_move.y / window.y * std::f32::consts::PI;
         let yaw = Quat::from_rotation_y(-delta_x);
         let pitch = Quat::from_rotation_x(-delta_y);
-        camera_transform.rotation = camera_transform.rotation * pitch * yaw;
+        camera_transform.rotation = camera_transform.rotation * yaw * pitch;
     } else if scroll.abs() > 0.0 {
         any = true;
         camera.radius -= scroll * camera.radius * 0.2;
@@ -159,7 +158,7 @@ fn setup(
             ..default()
         },
         PanOrbitCamera {
-            radius: radius,
+            radius,
             ..default()
         },
     ));
@@ -182,14 +181,11 @@ fn setup(
         road_mesh.lane_mesh.mesh.indicies.clone(),
     )));
 
-    commands.spawn((
-        PbrBundle {
-            mesh: meshes.add(mesh),
-            material: materials.add(Color::rgba(0.2, 0.2, 0.2, 1.0).into()),
-            ..default()
-        },
-        //Wireframe,
-    ));
+    commands.spawn((PbrBundle {
+        mesh: meshes.add(mesh),
+        material: materials.add(Color::rgba(0.2, 0.2, 0.2, 1.0).into()),
+        ..default()
+    },));
 
     let mut roadmark_mesh = Mesh::new(PrimitiveTopology::TriangleList);
     roadmark_mesh.insert_attribute(
@@ -208,14 +204,11 @@ fn setup(
         road_mesh.road_mark_mesh.mesh.indicies.clone(),
     )));
 
-    commands.spawn((
-        PbrBundle {
-            mesh: meshes.add(roadmark_mesh),
-            material: materials.add(Color::rgba(1.0, 1.0, 1.0, 1.0).into()),
-            ..default()
-        },
-        //Wireframe,
-    ));
+    commands.spawn((PbrBundle {
+        mesh: meshes.add(roadmark_mesh),
+        material: materials.add(Color::rgba(1.0, 1.0, 1.0, 1.0).into()),
+        ..default()
+    },));
 
     if to_debug {
         // debug mesh vertex
@@ -263,8 +256,8 @@ fn setup(
 
     commands.spawn((
         PbrBundle {
-            mesh: box_mesh.clone(),
-            transform: transform,
+            mesh: box_mesh,
+            transform,
             material: materials.add(Color::rgba(1.0, 0.0, 0.0, 1.0).into()),
             ..default()
         },
@@ -275,7 +268,7 @@ fn setup(
                 lane_id: -1,
             },
             s: 1.0,
-            height: height,
+            height,
         },
     ));
 }

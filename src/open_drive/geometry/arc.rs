@@ -54,6 +54,6 @@ impl RoadGeometry for Arc {
     }
 
     fn geometry_type(&self) -> GeometryType {
-        GeometryType::GeometryTypeArc
+        GeometryType::Arc
     }
 }

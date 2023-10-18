@@ -4,10 +4,10 @@ use std::str::FromStr;
 use std::vec::Vec;
 
 pub enum GeometryType {
-    GeometryTypeLine,
-    GeometryTypeSpiral,
-    GeometryTypeArc,
-    GeometryTypeParamPoly3,
+    Line,
+    Spiral,
+    Arc,
+    ParamPoly3,
 }
 
 impl FromStr for GeometryType {
@@ -15,10 +15,10 @@ impl FromStr for GeometryType {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "line" => Ok(GeometryType::GeometryTypeLine),
-            "arc" => Ok(GeometryType::GeometryTypeArc),
-            "spiral" => Ok(GeometryType::GeometryTypeSpiral),
-            "paramPoly3" => Ok(GeometryType::GeometryTypeParamPoly3),
+            "line" => Ok(GeometryType::Line),
+            "arc" => Ok(GeometryType::Arc),
+            "spiral" => Ok(GeometryType::Spiral),
+            "paramPoly3" => Ok(GeometryType::ParamPoly3),
             _ => Err(format!("undefined geometry type: {}", s)),
         }
     }
@@ -27,10 +27,10 @@ impl FromStr for GeometryType {
 impl ToString for GeometryType {
     fn to_string(&self) -> String {
         match self {
-            GeometryType::GeometryTypeArc => "arc".to_string(),
-            GeometryType::GeometryTypeLine => "line".to_string(),
-            GeometryType::GeometryTypeSpiral => "spiral".to_string(),
-            GeometryType::GeometryTypeParamPoly3 => "paramPoly3".to_string(),
+            GeometryType::Arc => "arc".to_string(),
+            GeometryType::Line => "line".to_string(),
+            GeometryType::Spiral => "spiral".to_string(),
+            GeometryType::ParamPoly3 => "paramPoly3".to_string(),
         }
     }
 }
