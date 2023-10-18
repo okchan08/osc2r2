@@ -1,4 +1,5 @@
-use osc2r2;
+use ordered_float::OrderedFloat;
+use osc2r2::{self, open_drive::lane::LaneKey};
 
 use bevy::{
     input::mouse::{MouseMotion, MouseWheel},
@@ -148,8 +149,7 @@ fn get_primary_window_size(window: &Window) -> Vec2 {
 
 #[derive(Component)]
 struct Actor {
-    pub road_id: String,
-    pub lane_id: i32,
+    pub lane_key: LaneKey,
     pub s: f64,
     pub height: f32,
 }
@@ -308,9 +308,12 @@ fn setup(
             ..default()
         },
         Actor {
-            road_id: "52".to_string(),
-            lane_id: 1,
-            s: 20.0,
+            lane_key: LaneKey {
+                road_id: "4".to_string(),
+                lanesection_s0: OrderedFloat(0.0),
+                lane_id: -1,
+            },
+            s: 1.0,
             height: height,
         },
     ));
@@ -321,31 +324,36 @@ fn update_actor(
     odr: Res<BevyOpenDriveWrapper>,
     mut query: Query<(&mut Transform, &mut Actor), With<Actor>>,
 ) {
-    let speed = 1.0;
+    let speed = 10.0;
 
     for (mut transform, mut actor) in query.iter_mut() {
-        let s = actor.s + speed * time.delta_seconds_f64();
-        let spawn_transform = odr
-            .0
-            .get_road_transform(&actor.road_id, actor.lane_id, s)
-            .unwrap();
-        let spawn_direction = &spawn_transform.direction();
+        let ds = speed * time.delta_seconds_f64();
+        if let Some((lane_key, next_s)) =
+            odr.0.evaluate_road_ds(&actor.lane_key.clone(), actor.s, ds)
+        {
+            let Some(spawn_transform) =
+                odr.0
+                    .get_road_transform(&lane_key.road_id, lane_key.lane_id, next_s) else {return;};
+            // TODO fix lane id
+            let spawn_direction = &spawn_transform.direction();
 
-        *transform = Transform::from_xyz(
-            spawn_transform.position().0 as f32,
-            spawn_transform.position().1 as f32,
-            spawn_transform.position().2 as f32 + actor.height / 2.0,
-        );
+            *transform = Transform::from_xyz(
+                spawn_transform.position().0 as f32,
+                spawn_transform.position().1 as f32,
+                spawn_transform.position().2 as f32 + actor.height / 2.0,
+            );
 
-        transform.look_to(
-            Vec3::new(
-                spawn_direction.0 as f32,
-                spawn_direction.1 as f32,
-                spawn_direction.2 as f32,
-            ),
-            Vec3::Y,
-        );
+            transform.look_to(
+                Vec3::new(
+                    spawn_direction.0 as f32,
+                    spawn_direction.1 as f32,
+                    spawn_direction.2 as f32,
+                ),
+                Vec3::Y,
+            );
 
-        actor.s = s;
+            actor.s = next_s;
+            actor.lane_key = lane_key.clone();
+        }
     }
 }

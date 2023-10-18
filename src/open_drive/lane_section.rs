@@ -9,12 +9,13 @@ use super::road::Road;
 pub struct LaneSection {
     pub road_id: String,
     pub s0: f64,
+    pub s_end: f64,
     pub id_to_lane: BTreeMap<i32, Lane>,
 }
 
 impl LaneSection {
     pub fn parse_lane_section(
-        lanesection_node: &mut roxmltree::Node,
+        lanesection_node: &roxmltree::Node,
         parent_road: &Road,
     ) -> LaneSection {
         let s0 = lanesection_node
@@ -25,6 +26,7 @@ impl LaneSection {
         let mut lanesection = LaneSection {
             road_id: parent_road.id.to_owned(),
             s0: s0,
+            s_end: f64::NAN,
             id_to_lane: Lane::parse_lanes(lanesection_node, &parent_road.id, s0),
         };
         Self::derive_lane_borders(&mut lanesection, parent_road);

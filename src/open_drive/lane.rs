@@ -1,13 +1,14 @@
 use crate::open_drive::geometry::cubic_spline::{CubicSpline, Poly3};
+use ordered_float::OrderedFloat;
 use roxmltree;
 use std::collections::{BTreeMap, BTreeSet};
 
 use super::road_mark::{RoadMark, RoadMarkGroup};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, PartialOrd, Ord)]
 pub struct LaneKey {
     pub road_id: String,
-    pub lanesection_s0: f64,
+    pub lanesection_s0: OrderedFloat<f64>,
     pub lane_id: i32,
 }
 
@@ -19,14 +20,14 @@ pub struct Lane {
     pub lane_width: CubicSpline,
     pub outer_border: CubicSpline,
     pub inner_border: CubicSpline,
-    pub predecessor: Option<u32>,
-    pub successor: Option<u32>,
+    pub predecessor: Option<i32>,
+    pub successor: Option<i32>,
     pub roadmark_groups: BTreeSet<RoadMarkGroup>,
 }
 
 impl Lane {
     pub fn parse_lanes(
-        lanesection_nodes: &mut roxmltree::Node,
+        lanesection_nodes: &roxmltree::Node,
         parent_road_id: &String,
         lanesection_s: f64,
     ) -> BTreeMap<i32, Lane> {
@@ -41,7 +42,7 @@ impl Lane {
                 id: lane_id,
                 key: LaneKey {
                     road_id: parent_road_id.to_owned(),
-                    lanesection_s0: lanesection_s,
+                    lanesection_s0: OrderedFloat(lanesection_s),
                     lane_id: lane_id,
                 },
                 lane_type: lane_type.to_string(),
@@ -64,7 +65,7 @@ impl Lane {
                     .children()
                     .find(|&node| node.has_tag_name("successor"))
                 {
-                    lane.predecessor = successor_node.attribute("id").unwrap_or("0").parse().ok();
+                    lane.successor = successor_node.attribute("id").unwrap_or("0").parse().ok();
                 }
             }
 
@@ -152,7 +153,7 @@ impl Lane {
                 }
                 roadmarks.push(RoadMark {
                     road_id: self.key.road_id.to_owned(),
-                    lanesection_s0: self.key.lanesection_s0,
+                    lanesection_s0: self.key.lanesection_s0.0,
                     lane_id: self.id,
                     group_s0: roadmark_group_s0.0,
                     s_start: s_start_roadmark_group,
@@ -176,7 +177,7 @@ impl Lane {
                             s_end.min(s_start_single_roadmark + roadmark_line.width.0);
                         roadmarks.push(RoadMark {
                             road_id: self.key.road_id.to_owned(),
-                            lanesection_s0: self.key.lanesection_s0,
+                            lanesection_s0: self.key.lanesection_s0.0,
                             lane_id: self.id,
                             group_s0: roadmark_group_s0.0,
                             s_start: s_start_single_roadmark,

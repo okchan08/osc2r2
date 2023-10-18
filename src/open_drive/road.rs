@@ -1,6 +1,9 @@
+use bevy::reflect::list_hash;
 use roxmltree;
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::ops::Bound;
+use std::slice::Windows;
 
 use ordered_float::OrderedFloat;
 
@@ -31,12 +34,15 @@ pub struct Road {
     pub s_to_lanesection: BTreeMap<OrderedFloat<f64>, LaneSection>,
 
     pub ref_line: RefLine,
+
+    pub predecessor: Option<RoadLink>,
+    pub successor: Option<RoadLink>,
 }
 
 impl Road {
-    pub fn parse_roads(node: &mut roxmltree::Node) -> HashMap<String, Road> {
+    pub fn parse_roads(node: &roxmltree::Node) -> HashMap<String, Road> {
         let mut results = HashMap::new();
-        for mut road_node in node.children() {
+        for road_node in node.children() {
             if !road_node.has_tag_name("road") {
                 continue;
             }
@@ -65,21 +71,41 @@ impl Road {
                 superelevation: CubicSpline::new(),
                 ref_line: RefLine::new(&road_id, &length),
                 s_to_lanesection: BTreeMap::new(),
+                predecessor: None,
+                successor: None,
             };
 
-            Self::parse_road_geometry(&mut road, &mut road_node);
+            Self::parse_road_geometry(&mut road, &road_node);
+            Self::parse_road_linkage(&mut road, &road_node);
 
             if let Some(lanes_node) = road_node
                 .children()
                 .find(|&node| node.has_tag_name("lanes"))
             {
-                for mut lanesection_node in lanes_node
+                for lanesection_node in lanes_node
                     .children()
                     .filter(|&node| node.has_tag_name("laneSection"))
                 {
-                    let lanesection = LaneSection::parse_lane_section(&mut lanesection_node, &road);
+                    let lanesection = LaneSection::parse_lane_section(&lanesection_node, &road);
                     road.s_to_lanesection
                         .insert(OrderedFloat(lanesection.s0), lanesection);
+                }
+
+                // Need to extract keys from map in order to avoid immutable borrow of the map.
+                let list_s0: BTreeSet<OrderedFloat<f64>> =
+                    road.s_to_lanesection.keys().copied().collect();
+                for (s0, mut lanesection) in road.s_to_lanesection.iter_mut() {
+                    match list_s0
+                        .range((Bound::Excluded(s0), Bound::Unbounded))
+                        .next()
+                    {
+                        None => {
+                            lanesection.s_end = road.length;
+                        }
+                        Some(next_lanesec) => {
+                            lanesection.s_end = next_lanesec.0;
+                        }
+                    }
                 }
             }
             results.insert(road_id, road);
@@ -87,7 +113,39 @@ impl Road {
         results
     }
 
-    fn parse_road_geometry(road: &mut Road, road_node: &mut roxmltree::Node) {
+    fn parse_road_linkage(road: &mut Road, road_node: &roxmltree::Node) {
+        if let Some(node) = road_node.children().find(|&node| node.has_tag_name("link")) {
+            for link_node in node.children() {
+                if !link_node.has_tag_name("predecessor") && !link_node.has_tag_name("successor") {
+                    continue;
+                }
+                let id = link_node.attribute("elementId").unwrap_or("").into();
+                let type_str = link_node.attribute("elementType").unwrap_or("");
+                let contact_point_str = link_node.attribute("contactPoint").unwrap_or("");
+                let road_link = RoadLink {
+                    id: id,
+                    link_type: if type_str == "road" {
+                        RoadLinkType::Road
+                    } else {
+                        RoadLinkType::Junction
+                    },
+                    contact_point: if contact_point_str == "start" {
+                        RoadContactPoint::Start
+                    } else {
+                        RoadContactPoint::End
+                    },
+                };
+                if link_node.has_tag_name("predecessor") {
+                    road.predecessor = Some(road_link);
+                } else if link_node.has_tag_name("successor") {
+                    road.successor = Some(road_link);
+                }
+            }
+        }
+        // TODO parse road neighbor here
+    }
+
+    fn parse_road_geometry(road: &mut Road, road_node: &roxmltree::Node) {
         for node in road_node.descendants() {
             if !node.has_tag_name("planView") {
                 continue;
@@ -173,7 +231,7 @@ impl Road {
         }
     }
 
-    fn parse_road_reference_line(road: &mut Road, road_node: &mut roxmltree::Node) {
+    fn parse_road_reference_line(road: &mut Road, road_node: &roxmltree::Node) {
         let elevation_profile_node_opt = road_node
             .children()
             .find(|&node| node.has_tag_name("elevationProfile"));
@@ -259,8 +317,8 @@ impl Road {
     }
 
     pub fn get_lane_mesh(&self, lane: &Lane, eps: f64) -> Mesh3D {
-        let s_end = self.get_lanesection_end(lane.key.lanesection_s0);
-        self.get_lane_mesh_in_s_range(lane, lane.key.lanesection_s0, s_end, eps)
+        let s_end = self.get_lanesection_end(lane.key.lanesection_s0.0);
+        self.get_lane_mesh_in_s_range(lane, lane.key.lanesection_s0.0, s_end, eps)
     }
 
     fn get_lane_mesh_in_s_range(&self, lane: &Lane, s_start: f64, s_end: f64, eps: f64) -> Mesh3D {
@@ -362,6 +420,9 @@ impl Road {
     }
 
     pub fn get_lanesection(&self, s: f64) -> Option<&LaneSection> {
+        if s >= self.length {
+            return None;
+        }
         let s0 = self.get_lanesection_s0(s);
         self.s_to_lanesection.get(&OrderedFloat(s0))
     }
@@ -468,4 +529,25 @@ impl Road {
     pub fn get_direction(&self, s: f64) -> Vec3 {
         self.ref_line.get_grad(s).normalize()
     }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum RoadContactPoint {
+    None,
+    Start,
+    End,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum RoadLinkType {
+    None,
+    Road,
+    Junction,
+}
+
+#[derive(Debug)]
+pub struct RoadLink {
+    pub id: String,
+    pub contact_point: RoadContactPoint,
+    pub link_type: RoadLinkType,
 }

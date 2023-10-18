@@ -1,19 +1,29 @@
+use ordered_float::OrderedFloat;
+
 use crate::open_drive::{
     mesh::{LaneMesh, RoadMarkMesh, RoadNetworkMesh},
     road::Road,
 };
 
-use std::collections::HashMap;
+use std::{collections::HashMap, ops::Bound};
 
 use std::fs;
 use std::path::Path;
 
-use crate::open_drive::math::Vec3;
 use crate::open_drive::transform::Transform;
+
+use super::{
+    junction::{Junction, JunctionConnection},
+    lane::{Lane, LaneKey},
+    road::{RoadContactPoint, RoadLink, RoadLinkType},
+    road_topology::{RoadEdge, RoadTopology},
+};
 
 #[derive(Debug)]
 pub struct OpenDrive {
     id_to_road: HashMap<String, Road>,
+    id_to_junction: HashMap<String, Junction>,
+    road_topology: RoadTopology,
 }
 
 impl OpenDrive {
@@ -22,10 +32,191 @@ impl OpenDrive {
         let binding = String::from_utf8(s).unwrap();
         let contents = binding.as_str();
         let doc = roxmltree::Document::parse(&contents).unwrap();
-        let mut node = doc.root_element();
+        let node = doc.root_element();
 
-        OpenDrive {
-            id_to_road: Road::parse_roads(&mut node),
+        let mut odr = OpenDrive {
+            id_to_road: Road::parse_roads(&node),
+            id_to_junction: Junction::parse_junctions(&node),
+            road_topology: RoadTopology::new(),
+        };
+
+        odr.construct_road_topology();
+        odr.traverse_junctions();
+
+        odr
+    }
+
+    fn construct_road_topology(&mut self) {
+        for find_successor in vec![true, false].into_iter() {
+            for (_, road) in self.id_to_road.iter() {
+                let road_link_opt = if find_successor {
+                    &road.successor
+                } else {
+                    &road.predecessor
+                };
+                if road_link_opt.is_none() {
+                    continue;
+                }
+                let road_link = road_link_opt.as_ref().unwrap();
+                if road_link.link_type != RoadLinkType::Road
+                    || road_link.contact_point == RoadContactPoint::None
+                {
+                    continue;
+                }
+
+                if !self.id_to_road.contains_key(&road_link.id) {
+                    continue;
+                }
+
+                let next_road = self.id_to_road.get(&road_link.id).unwrap();
+                let next_road_contact_lanesection =
+                    if road_link.contact_point == RoadContactPoint::Start {
+                        next_road.s_to_lanesection.first_key_value().unwrap().1
+                    } else {
+                        next_road.s_to_lanesection.last_key_value().unwrap().1
+                    };
+
+                for (s0, lane_section) in road.s_to_lanesection.iter() {
+                    let next_lanesec_s0 = road
+                        .s_to_lanesection
+                        .range((Bound::Excluded(s0), Bound::Unbounded))
+                        .next();
+                    let (next_lanesec, next_lanesec_road) =
+                        if find_successor && next_lanesec_s0.is_none() {
+                            (next_road_contact_lanesection, next_road)
+                        } else if !find_successor
+                            && s0 == road.s_to_lanesection.first_key_value().unwrap().0
+                        {
+                            (next_road_contact_lanesection, next_road)
+                        } else {
+                            if find_successor {
+                                (
+                                    road.s_to_lanesection
+                                        .get(&next_lanesec_s0.unwrap().0)
+                                        .unwrap(),
+                                    road,
+                                )
+                            } else {
+                                let prev_lanesec_s0 =
+                                    road.s_to_lanesection.range(..s0).next_back().unwrap().0;
+                                (road.s_to_lanesection.get(&prev_lanesec_s0).unwrap(), road)
+                            }
+                        };
+                    for (_, lane) in lane_section.id_to_lane.iter() {
+                        let next_lane_id_opt = if find_successor {
+                            lane.successor
+                        } else {
+                            lane.predecessor
+                        };
+                        if next_lane_id_opt.is_none() {
+                            continue;
+                        }
+                        let next_lane_id = next_lane_id_opt.unwrap();
+                        if next_lane_id == 0 {
+                            continue;
+                        }
+
+                        let next_lane_opt = next_lanesec.id_to_lane.get(&next_lane_id);
+                        if next_lane_opt.is_none() {
+                            continue;
+                        }
+                        let next_lane = next_lane_opt.unwrap();
+
+                        let (from_lane, to_lane) = if find_successor {
+                            (lane, next_lane)
+                        } else {
+                            (next_lane, lane)
+                        };
+                        let (from_lanesection, to_lanesection) = if find_successor {
+                            (lane_section, next_lanesec)
+                        } else {
+                            (next_lanesec, lane_section)
+                        };
+                        let (from_road, to_road) = if find_successor {
+                            (road, next_lanesec_road)
+                        } else {
+                            (next_lanesec_road, road)
+                        };
+
+                        let from = LaneKey {
+                            road_id: from_road.id.clone(),
+                            lanesection_s0: OrderedFloat(from_lanesection.s0),
+                            lane_id: from_lane.id,
+                        };
+
+                        let to = LaneKey {
+                            road_id: to_road.id.clone(),
+                            lanesection_s0: OrderedFloat(to_lanesection.s0),
+                            lane_id: to_lane.id,
+                        };
+
+                        self.road_topology.add_edge(RoadEdge { from: from, to: to });
+                    }
+                }
+            }
+        }
+    }
+
+    fn traverse_junctions(&mut self) {
+        for (junction_id, junction) in self.id_to_junction.iter() {
+            for (_, connection) in junction.id_to_connection.iter() {
+                if let (Some(connecting_road), Some(incoming_road)) = (
+                    self.id_to_road.get(&connection.get_info().connecting_road),
+                    self.id_to_road.get(&connection.get_info().incoming_road),
+                ) {
+                    let is_succ_junc = incoming_road.successor.is_some()
+                        && incoming_road.successor.as_ref().unwrap().link_type
+                            == RoadLinkType::Junction
+                        && &incoming_road.successor.as_ref().unwrap().id == junction_id;
+                    let is_pred_junc = incoming_road.predecessor.is_some()
+                        && incoming_road.predecessor.as_ref().unwrap().link_type
+                            == RoadLinkType::Junction
+                        && &incoming_road.predecessor.as_ref().unwrap().id == junction_id;
+                    if !is_succ_junc && !is_pred_junc {
+                        continue;
+                    }
+
+                    let incoming_lanesec = if is_succ_junc {
+                        incoming_road.s_to_lanesection.last_key_value().unwrap().1
+                    } else {
+                        incoming_road.s_to_lanesection.first_key_value().unwrap().1
+                    };
+                    let connecting_lanesec = match connection {
+                        JunctionConnection::Start(_) => {
+                            connecting_road
+                                .s_to_lanesection
+                                .first_key_value()
+                                .unwrap()
+                                .1
+                        }
+                        _ => connecting_road.s_to_lanesection.last_key_value().unwrap().1,
+                    };
+
+                    for lane_link in connection.get_info().lane_links.iter() {
+                        if lane_link.from == 0 || lane_link.to == 0 {
+                            continue;
+                        }
+                        if let (Some(from_lane), Some(to_lane)) = (
+                            incoming_lanesec.id_to_lane.get(&lane_link.from),
+                            connecting_lanesec.id_to_lane.get(&lane_link.to),
+                        ) {
+                            let from = LaneKey {
+                                road_id: incoming_road.id.clone(),
+                                lanesection_s0: OrderedFloat(incoming_lanesec.s0),
+                                lane_id: from_lane.id,
+                            };
+
+                            let to = LaneKey {
+                                road_id: connecting_road.id.clone(),
+                                lanesection_s0: OrderedFloat(connecting_lanesec.s0),
+                                lane_id: to_lane.id,
+                            };
+
+                            self.road_topology.add_edge(RoadEdge { from: from, to: to });
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -39,6 +230,56 @@ impl OpenDrive {
                     let position = road.get_xyz(s, t, 0.0, None);
                     let rotation = road.get_direction(s);
                     return Some(Transform::new(position, rotation));
+                }
+            }
+        }
+        None
+    }
+
+    pub fn evaluate_road_ds<'a>(
+        &'a self,
+        lane_key: &'a LaneKey,
+        s: f64,
+        ds: f64,
+    ) -> Option<(&LaneKey, f64)> {
+        if let Some(road) = self.id_to_road.get(&lane_key.road_id) {
+            // assume right hand traffic
+            let new_s = s + ds * if lane_key.lane_id > 0 { -1.0 } else { 1.0 };
+            match road.get_lanesection(new_s) {
+                None => {
+                    let lane_candidates = if lane_key.lane_id < 0 {
+                        let last_lanesec_s0 = road.s_to_lanesection.last_key_value().unwrap().0;
+                        self.road_topology.get_lane_successor(&LaneKey {
+                            road_id: lane_key.road_id.clone(),
+                            lanesection_s0: *last_lanesec_s0,
+                            lane_id: lane_key.lane_id,
+                        })
+                    } else {
+                        let first_lanesec_s0 = road.s_to_lanesection.first_key_value().unwrap().0;
+                        self.road_topology.get_lane_predecessor(&LaneKey {
+                            road_id: lane_key.road_id.clone(),
+                            lanesection_s0: *first_lanesec_s0,
+                            lane_id: lane_key.lane_id,
+                        })
+                    };
+
+                    if lane_candidates.is_none() {
+                        return None;
+                    }
+
+                    // choose first connecting lane.
+                    let next_lane_key = lane_candidates.unwrap().iter().next_back();
+                    if next_lane_key.is_none() {
+                        return None;
+                    }
+                    let mut delta_s = new_s;
+                    if next_lane_key.unwrap().road_id != lane_key.road_id {
+                        delta_s = new_s - road.length;
+                    }
+                    return Some((next_lane_key.unwrap(), delta_s));
+                }
+                Some(_) => {
+                    return Some((lane_key, new_s));
                 }
             }
         }

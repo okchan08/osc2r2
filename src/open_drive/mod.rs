@@ -1,4 +1,5 @@
 pub mod geometry;
+pub mod junction;
 pub mod lane;
 pub mod lane_section;
 pub mod math;
@@ -7,5 +8,6 @@ pub mod open_drive;
 pub mod ref_line;
 pub mod road;
 pub mod road_mark;
+pub mod road_topology;
 pub mod transform;
 pub mod utils;
