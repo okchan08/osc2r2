@@ -80,7 +80,7 @@ impl PanOrbitCamera {
             let window = get_primary_window_size(windows.single());
             let delta_x = rotation_move.x / window.x * std::f32::consts::PI * 2.0;
             let delta_y = rotation_move.y / window.y * std::f32::consts::PI;
-            let yaw = Quat::from_rotation_y(-delta_x);
+            let yaw = Quat::from_rotation_y(delta_x);
             let pitch = Quat::from_rotation_x(-delta_y);
             camera_transform.rotation = camera_transform.rotation * yaw * pitch;
         } else if scroll.abs() > 0.0 {

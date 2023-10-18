@@ -9,3 +9,4 @@ edition = "2021"
 bevy = "0.11"
 roxmltree = "0.18.0"
 ordered-float = "3.7.0"
+clap = { version = "4.4.6", features = ["derive"] }

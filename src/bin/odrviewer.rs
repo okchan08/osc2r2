@@ -7,13 +7,21 @@ use bevy::{
     render::{mesh, RenderPlugin},
 };
 
-#[derive(Resource)]
-struct BevyOpenDriveWrapper(osc2r2::open_drive::OpenDrive);
+use clap::Parser;
+use osc2r2::bevy::bridge::BevyOpenDriveWrapper;
+
+#[derive(Parser)]
+struct Args {
+    /// Path to the input OpenDRIVE file.
+    #[arg(short = 'i', long = "input")]
+    odr_filepath: String,
+}
 
 fn main() {
-    let odr = BevyOpenDriveWrapper(osc2r2::open_drive::OpenDrive::parse_open_drive(
-        "./Town04.xodr",
-    ));
+    let args = Args::parse();
+    let odr = BevyOpenDriveWrapper {
+        open_drive: osc2r2::open_drive::OpenDrive::parse_open_drive(args.odr_filepath),
+    };
 
     App::new()
         .insert_resource(ClearColor(Color::DARK_GRAY))
@@ -103,7 +111,7 @@ fn pan_orbit_camera(
                 }
             };
             let delta_y = rotation_move.y / window.y * std::f32::consts::PI;
-            let yaw = Quat::from_rotation_y(-delta_x);
+            let yaw = Quat::from_rotation_y(delta_x);
             let pitch = Quat::from_rotation_x(-delta_y);
             transform.rotation = transform.rotation * yaw * pitch;
         } else if pan.length_squared() > 0.0 {
@@ -149,7 +157,7 @@ fn setup(
     odr: Res<BevyOpenDriveWrapper>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let road_mesh = odr.0.get_road_network_mesh(0.1);
+    let road_mesh = odr.open_drive.get_road_network_mesh(0.1);
     let translation = Vec3::new(10.0, 3.0, 40.0);
     let radius = translation.length();
 
