@@ -46,36 +46,34 @@ impl Poly3 {
                 s += f64::abs(eps / self.c).sqrt();
             }
         } else {
-            //let a = self.a;
-            //let b = self.b;
-            //let c = self.c;
-            //let d = self.d;
-            ///* transform to parametric form */
-            //let s_0 = s_start;
-            //let s_1 = s_end;
-            //let d_p = -d * s_0 * s_0 * s_0 + d * s_1 * s_1 * s_1 - 3.0 * d * s_0 * s_1 * s_1
-            //    + 3.0 * d * s_0 * s_0 * s_1;
-            //let c_p = 3.0 * d * s_0 * s_0 * s_0 + 3.0 * d * s_0 * s_1 * s_1
-            //    - 6.0 * d * s_0 * s_0 * s_1
-            //    + c * s_0 * s_0
-            //    + c * s_1 * s_1
-            //    - 2.0 * c * s_0 * s_1;
-            //let b_p = -3.0 * d * s_0 * s_0 * s_0 + 3.0 * d * s_0 * s_0 * s_1 - 2.0 * c * s_0 * s_0
-            //    + 2.0 * c * s_0 * s_1
-            //    - b * s_0
-            //    + b * s_1;
-            //let a_p = d * s_0 * s_0 * s_0 + c * s_0 * s_0 + b * s_0 + a;
+            let a = self.a;
+            let b = self.b;
+            let c = self.c;
+            let d = self.d;
+            /* transform to parametric form */
+            let s_0 = s_start;
+            let s_1 = s_end;
+            let d_p = -d * s_0 * s_0 * s_0 + d * s_1 * s_1 * s_1 - 3.0 * d * s_0 * s_1 * s_1
+                + 3.0 * d * s_0 * s_0 * s_1;
+            let c_p = 3.0 * d * s_0 * s_0 * s_0 + 3.0 * d * s_0 * s_1 * s_1
+                - 6.0 * d * s_0 * s_0 * s_1
+                + c * s_0 * s_0
+                + c * s_1 * s_1
+                - 2.0 * c * s_0 * s_1;
+            let b_p = -3.0 * d * s_0 * s_0 * s_0 + 3.0 * d * s_0 * s_0 * s_1 - 2.0 * c * s_0 * s_0
+                + 2.0 * c * s_0 * s_1
+                - b * s_0
+                + b * s_1;
+            let a_p = d * s_0 * s_0 * s_0 + c * s_0 * s_0 + b * s_0 + a;
 
-            //let coefficients = [vec![a_p], vec![b_p], vec![c_p], vec![d_p]];
-            //let control_points = CubicBezier::get_control_points(&coefficients);
-            //let cubic_bezier = CubicBezier::new(control_points);
-            //let p_vals = cubic_bezier.approximate_linear(eps);
-            //s_vals.push(s_start);
-            //for p in p_vals {
-            //    s_vals.push(p.0 * (s_end - s_start) + s_start);
-            //}
+            let coefficients = [vec![a_p], vec![b_p], vec![c_p], vec![d_p]];
+            let control_points = CubicBezier::get_control_points(&coefficients);
+            let cubic_bezier = CubicBezier::new(control_points);
+            let p_vals = cubic_bezier.approximate_linear(eps);
             s_vals.push(s_start);
-            s_vals.push(s_end);
+            for p in p_vals {
+                s_vals.push(p.0 * (s_end - s_start) + s_start);
+            }
         }
 
         if s_end - s_vals.last().unwrap() < 1.0e-9 && s_vals.len() != 1 {
