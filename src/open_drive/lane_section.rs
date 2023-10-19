@@ -1,7 +1,6 @@
 use crate::open_drive::lane::Lane;
-use std::{collections::BTreeMap, ops::Bound};
+use std::collections::BTreeMap;
 
-use ordered_float::OrderedFloat;
 use roxmltree;
 
 use super::road::Road;
@@ -139,72 +138,4 @@ impl LaneSection {
         // TODO this lane id is wrong, need to fix the search algorithm.
         Some(0)
     }
-
-    //pub fn get_lane_id(&self, s: f64, t: f64) -> Option<i32> {
-    //    if self
-    //        .id_to_lane
-    //        .get(&0)
-    //        .unwrap()
-    //        .outer_border
-    //        .get(s, 0.0, true)
-    //        == t
-    //    {
-    //        return Some(0);
-    //    }
-
-    //    let outer_border_to_lane_id: BTreeMap<OrderedFloat<f64>, i32> = self
-    //        .id_to_lane
-    //        .iter()
-    //        .map(|(lane_id, lane)| {
-    //            let outer_brdr_t = lane.outer_border.get(s, 0.0, true);
-    //            (OrderedFloat(outer_brdr_t), *lane_id)
-    //        })
-    //        .collect();
-
-    //    let outer_brdr_iter = outer_border_to_lane_id.range(OrderedFloat(t)..).next_back();
-
-    //    let result = match outer_brdr_iter {
-    //        Some((t_val, lane_id)) if *lane_id <= 0 && t_val.0 != t => {
-    //            let prev_iter = outer_border_to_lane_id.range(..t_val).next_back();
-    //            prev_iter.map(|(_, v)| *v)
-    //        }
-    //        Some((_, lane_id)) => Some(*lane_id),
-    //        None => {
-    //            let (last_t, last_lane_id) = outer_border_to_lane_id.last_key_value().unwrap();
-    //            if last_t.0 == t {
-    //                return Some(*last_lane_id);
-    //            }
-
-    //            let (first_t, first_lane_id) = outer_border_to_lane_id.first_key_value().unwrap();
-    //            if first_t.0 == t {
-    //                return Some(*first_lane_id);
-    //            }
-    //            None
-    //        }
-    //    };
-
-    //    result
-
-    //    //for (lane_id, lane) in self.id_to_lane.iter() {
-    //    //    let outer_brdr_t = OrderedFloat(lane.outer_border.get(s, 0.0, true));
-    //    //    let inner_brdr_t = OrderedFloat(lane.inner_border.get(s, 0.0, true));
-    //    //    if *lane_id < 0 && outer_brdr_t < OrderedFloat(t) && OrderedFloat(t) <= inner_brdr_t {
-    //    //        return *lane_id;
-    //    //    }
-    //    //    if *lane_id > 0 && inner_brdr_t <= OrderedFloat(t) && OrderedFloat(t) < outer_brdr_t {
-    //    //        return *lane_id;
-    //    //    }
-    //    //    println!(
-    //    //        "lane_id = {} outer_t = {} inner_t = {} t = {}  innter_t == t = {}",
-    //    //        lane_id,
-    //    //        outer_brdr_t,
-    //    //        inner_brdr_t,
-    //    //        t,
-    //    //        inner_brdr_t == OrderedFloat(t),
-    //    //    );
-    //    //}
-    //    //// TODO this lane id is wrong, need to fix the search algorithm.
-    //    //panic!("invalid t!");
-    //    //0
-    //}
 }

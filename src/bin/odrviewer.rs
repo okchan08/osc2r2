@@ -113,7 +113,8 @@ fn pan_orbit_camera(
             let delta_y = rotation_move.y / window.y * std::f32::consts::PI;
             let yaw = Quat::from_rotation_y(delta_x);
             let pitch = Quat::from_rotation_x(-delta_y);
-            transform.rotation = transform.rotation * yaw * pitch;
+            transform.rotation *= yaw;
+            transform.rotation *= pitch;
         } else if pan.length_squared() > 0.0 {
             any = true;
             // make panning distance independent of resolution and FOV,

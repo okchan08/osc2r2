@@ -20,7 +20,7 @@ impl Poly3 {
             a: a - b * s0 + c * s0 * s0 - d * s0 * s0 * s0,
             b: b - 2.0 * c * s0 + 3.0 * d * s0 * s0,
             c: c - 3.0 * d * s0,
-            d: d,
+            d,
         }
     }
 

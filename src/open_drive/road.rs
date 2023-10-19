@@ -337,9 +337,9 @@ impl Road {
         for s_val in s_vals.iter() {
             let mut vn_inner_brdr = Vec3::new(0.0, 0.0, 0.0);
             let t_inner_brdr = lane.inner_border.get(s_val.0, 0.0, true);
-            let inner_mesh = self.get_surface_pt(s_val.0, t_inner_brdr, &mut vn_inner_brdr);
-            if inner_mesh.is_some() {
-                out_mesh.vertices.push(inner_mesh.unwrap());
+            if let Some(inner_mesh) = self.get_surface_pt(s_val.0, t_inner_brdr, &mut vn_inner_brdr)
+            {
+                out_mesh.vertices.push(inner_mesh);
                 out_mesh.normals.push(vn_inner_brdr);
                 out_mesh
                     .st_coordinates
@@ -348,9 +348,9 @@ impl Road {
 
             let mut vn_outer_brdr = Vec3::new(0.0, 0.0, 0.0);
             let t_outer_brdr = lane.outer_border.get(s_val.0, 0.0, true);
-            let outer_mesh = self.get_surface_pt(s_val.0, t_outer_brdr, &mut vn_outer_brdr);
-            if outer_mesh.is_some() {
-                out_mesh.vertices.push(outer_mesh.unwrap());
+            if let Some(outer_mesh) = self.get_surface_pt(s_val.0, t_outer_brdr, &mut vn_outer_brdr)
+            {
+                out_mesh.vertices.push(outer_mesh);
                 out_mesh.normals.push(vn_outer_brdr);
                 out_mesh
                     .st_coordinates
@@ -448,17 +448,15 @@ impl Road {
             let t_edge_a = lane.outer_border.get(s_val.0, 0.0, true)
                 + roadmark.width * 0.5
                 + roadmark.t_offset;
-            let edge_a_mesh = self.get_surface_pt(s_val.0, t_edge_a, &mut vn_edge_a);
-            if edge_a_mesh.is_some() {
-                out_mesh.vertices.push(edge_a_mesh.unwrap());
+            if let Some(edge_a_mesh) = self.get_surface_pt(s_val.0, t_edge_a, &mut vn_edge_a) {
+                out_mesh.vertices.push(edge_a_mesh);
                 out_mesh.normals.push(vn_edge_a);
             }
 
             let mut vn_edge_b = Vec3::new(0.0, 0.0, 0.0);
             let t_edge_b = t_edge_a - roadmark.width;
-            let edge_b_mesh = self.get_surface_pt(s_val.0, t_edge_b, &mut vn_edge_b);
-            if edge_b_mesh.is_some() {
-                out_mesh.vertices.push(edge_b_mesh.unwrap());
+            if let Some(edge_b_mesh) = self.get_surface_pt(s_val.0, t_edge_b, &mut vn_edge_b) {
+                out_mesh.vertices.push(edge_b_mesh);
                 out_mesh.normals.push(vn_edge_b);
             }
         }

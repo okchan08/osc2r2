@@ -1,7 +1,6 @@
 use std::{
     collections::{BTreeMap, BTreeSet},
     ops::Index,
-    process::id,
 };
 
 use ordered_float::OrderedFloat;
@@ -10,17 +9,15 @@ pub struct CubicBezier {
     control_points: [Vec<f64>; 4],
     valid_length: f64,
     arclen_t: BTreeMap<OrderedFloat<f64>, f64>,
-    length_to_tolerance: f64,
 }
 
 impl CubicBezier {
     pub fn new(control_points: [Vec<f64>; 4]) -> Self {
         let length_to_tolerance = 1.0e-2;
         let mut cubic_bezier = CubicBezier {
-            control_points: control_points,
+            control_points,
             valid_length: 0.0,
             arclen_t: BTreeMap::new(),
-            length_to_tolerance,
         };
         let t_vals = cubic_bezier.approximate_linear(length_to_tolerance);
         if t_vals.len() < 2 {
@@ -73,15 +70,15 @@ impl CubicBezier {
 
         ctrl_pts[0] = a.to_vec();
 
-        for idx in 0..dim {
+        for (idx, _) in b.iter().enumerate() {
             ctrl_pts[1][idx] = (b[idx] / 3.0) + a[idx];
         }
 
-        for idx in 0..dim {
+        for (idx, _) in c.iter().enumerate() {
             ctrl_pts[2][idx] = (c[idx] / 3.0) + 2.0 * ctrl_pts[1][idx] - ctrl_pts[0][idx];
         }
 
-        for idx in 0..dim {
+        for (idx, _) in d.iter().enumerate() {
             ctrl_pts[3][idx] =
                 d[idx] + 3.0 * ctrl_pts[2][idx] - 3.0 * ctrl_pts[1][idx] + ctrl_pts[0][idx];
         }
@@ -90,15 +87,15 @@ impl CubicBezier {
     }
 
     pub fn get_coefficients(control_points: &[Vec<f64>; 4]) -> [Vec<f64>; 4] {
-        let pA = &control_points[0];
-        let pB = &control_points[1];
-        let pC = &control_points[2];
-        let pD = &control_points[3];
+        let p_a = &control_points[0];
+        let p_b = &control_points[1];
+        let p_c = &control_points[2];
+        let p_d = &control_points[3];
 
-        let dim = pA.len();
-        assert_eq!(pB.len(), dim);
-        assert_eq!(pC.len(), dim);
-        assert_eq!(pD.len(), dim);
+        let dim = p_a.len();
+        assert_eq!(p_b.len(), dim);
+        assert_eq!(p_c.len(), dim);
+        assert_eq!(p_d.len(), dim);
 
         let mut coefficients = [
             vec![0.0; dim],
@@ -107,18 +104,18 @@ impl CubicBezier {
             vec![0.0; dim],
         ];
 
-        coefficients[0] = pA.to_vec();
+        coefficients[0] = p_a.to_vec();
 
         for idx in 0..dim {
-            coefficients[1][idx] = 3.0 * pB[idx] - 3.0 * pA[idx];
+            coefficients[1][idx] = 3.0 * p_b[idx] - 3.0 * p_a[idx];
         }
 
         for idx in 0..dim {
-            coefficients[2][idx] = 3.0 * pC[idx] - 6.0 * pB[idx] + 3.0 * pA[idx];
+            coefficients[2][idx] = 3.0 * p_c[idx] - 6.0 * p_b[idx] + 3.0 * p_a[idx];
         }
 
         for idx in 0..dim {
-            coefficients[3][idx] = pD[idx] - 3.0 * pC[idx] + 3.0 * pB[idx] - pA[idx];
+            coefficients[3][idx] = p_d[idx] - 3.0 * p_c[idx] + 3.0 * p_b[idx] - p_a[idx];
         }
 
         coefficients
@@ -127,8 +124,6 @@ impl CubicBezier {
     pub fn approximate_linear(&self, eps: f64) -> BTreeSet<OrderedFloat<f64>> {
         let coefficients = CubicBezier::get_coefficients(&self.control_points);
         let dim = coefficients[0].len();
-
-        //let seg_size = std::pow(0.5 * eps / ((1.0 / 54.0) * norm(coefficients[3])), (1.0 / 3.0));
 
         let norm = |vec: &Vec<f64>| -> f64 {
             vec.iter()
@@ -164,21 +159,21 @@ impl CubicBezier {
             let c_pts_sub = self.get_subcurve(t0, t1);
 
             /* approximate sub-cubic bezier by two quadratic ones */
-            let mut pB_quad_0 = vec![0.0; dim];
-            for idx in 0..dim {
-                pB_quad_0[idx] = (1.0 - 0.75) * c_pts_sub[0][idx] + 0.75 * c_pts_sub[1][idx];
+            let mut p_b_quad_0 = vec![0.0; dim];
+            for (idx, item) in p_b_quad_0.iter_mut().enumerate() {
+                *item = (1.0 - 0.75) * c_pts_sub[0][idx] + 0.75 * c_pts_sub[1][idx];
             }
-            let mut pB_quad_1 = vec![0.0; dim];
-            for idx in 0..dim {
-                pB_quad_1[idx] = (1.0 - 0.75) * c_pts_sub[3][idx] + 0.75 * c_pts_sub[2][idx];
+            let mut p_b_quad_1 = vec![0.0; dim];
+            for (idx, item) in p_b_quad_1.iter_mut().enumerate() {
+                *item = (1.0 - 0.75) * c_pts_sub[3][idx] + 0.75 * c_pts_sub[2][idx];
             }
-            let mut pM_quad = vec![0.0; dim];
-            for idx in 0..dim {
-                pM_quad[idx] = (1.0 - 0.5) * pB_quad_0[idx] + 0.5 * pB_quad_1[idx];
+            let mut p_m_quad = vec![0.0; dim];
+            for (idx, item) in p_m_quad.iter_mut().enumerate() {
+                *item = (1.0 - 0.5) * p_b_quad_0[idx] + 0.5 * p_b_quad_1[idx];
             }
 
             for p_sub in approximate_linear_quad_bezier(
-                &[c_pts_sub[0].to_vec(), pB_quad_0, pM_quad.to_vec()],
+                &[c_pts_sub[0].to_vec(), p_b_quad_0, p_m_quad.to_vec()],
                 eps * 0.5,
             ) {
                 t_vals.push(t0 + p_sub * (t1 - t0) * 0.5);
@@ -186,7 +181,7 @@ impl CubicBezier {
             t_vals.pop();
 
             for p_sub in approximate_linear_quad_bezier(
-                &[pM_quad.to_vec(), pB_quad_1, c_pts_sub[3].to_vec()],
+                &[p_m_quad.to_vec(), p_b_quad_1, c_pts_sub[3].to_vec()],
                 eps * 0.5,
             ) {
                 t_vals.push(t0 + (t1 - t0) * 0.5 + p_sub * (t1 - t0) * 0.5);
@@ -202,8 +197,8 @@ impl CubicBezier {
         let f_cubic_t123 = |t1: f64, t2: f64, t3: f64, ctrl_pts: &[Vec<f64>; 4]| -> Vec<f64> {
             let dim = ctrl_pts[0].len();
             let mut out = vec![0.0; dim];
-            for idx in 0..dim {
-                out[idx] = (1.0 - t3)
+            for (idx, item) in out.iter_mut().enumerate() {
+                *item = (1.0 - t3)
                     * ((1.0 - t2) * ((1.0 - t1) * ctrl_pts[0][idx] + t1 * ctrl_pts[1][idx])
                         + t2 * ((1.0 - t1) * ctrl_pts[1][idx] + t1 * ctrl_pts[2][idx]))
                     + t3 * ((1.0 - t2) * ((1.0 - t1) * ctrl_pts[1][idx] + t1 * ctrl_pts[2][idx])
@@ -223,8 +218,8 @@ impl CubicBezier {
     fn get(&self, t: f64) -> Vec<f64> {
         let dim = self.control_points[0].len();
         let mut out_pt = vec![0.0; dim];
-        for idx in 0..dim {
-            out_pt[idx] = (1.0 - t) * (1.0 - t) * (1.0 - t) * self.control_points[0][idx]
+        for (idx, item) in out_pt.iter_mut().enumerate() {
+            *item = (1.0 - t) * (1.0 - t) * (1.0 - t) * self.control_points[0][idx]
                 + 3.0 * t * (1.0 - t) * (1.0 - t) * self.control_points[1][idx]
                 + 3.0 * t * t * (1.0 - t) * self.control_points[2][idx]
                 + t * t * t * self.control_points[3][idx];
@@ -237,8 +232,8 @@ fn approximate_linear_quad_bezier(ctrl_pts: &[Vec<f64>; 3], eps: f64) -> Vec<f64
     let dim = ctrl_pts[0].len();
     let mut param_c = vec![0.0; dim];
 
-    for idx in 0..dim {
-        param_c[idx] = ctrl_pts[0][idx] - 2.0 * ctrl_pts[1][idx] + ctrl_pts[2][idx];
+    for (idx, item) in param_c.iter_mut().enumerate() {
+        *item = ctrl_pts[0][idx] - 2.0 * ctrl_pts[1][idx] + ctrl_pts[2][idx];
     }
 
     let norm = |vec: &Vec<f64>| -> f64 {
