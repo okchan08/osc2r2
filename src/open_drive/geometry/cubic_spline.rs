@@ -2,6 +2,8 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use ordered_float::OrderedFloat;
 
+use crate::open_drive::utils::cubic_bezier::CubicBezier;
+
 #[derive(Debug, Clone, Copy)]
 pub struct Poly3 {
     a: f64,
@@ -44,12 +46,11 @@ impl Poly3 {
                 s += f64::abs(eps / self.c).sqrt();
             }
         } else {
-            todo!();
             //let a = self.a;
             //let b = self.b;
             //let c = self.c;
             //let d = self.d;
-            /* transform to parametric form */
+            ///* transform to parametric form */
             //let s_0 = s_start;
             //let s_1 = s_end;
             //let d_p = -d * s_0 * s_0 * s_0 + d * s_1 * s_1 * s_1 - 3.0 * d * s_0 * s_1 * s_1
@@ -65,13 +66,16 @@ impl Poly3 {
             //    + b * s_1;
             //let a_p = d * s_0 * s_0 * s_0 + c * s_0 * s_0 + b * s_0 + a;
 
-            //const std::array<Vec1D, 4> coefficients = {{{a_p}, {b_p}, {c_p}, {d_p}}};
-            //const std::set<double>     p_vals = CubicBezier1D(CubicBezier1D::get_control_points(coefficients)).approximate_linear(eps);
-
-            //s_vals.push_back(s_start);
-            //for (const double& p : p_vals)
-            //    s_vals.push_back(p * (s_end - s_start) + s_start);
+            //let coefficients = [vec![a_p], vec![b_p], vec![c_p], vec![d_p]];
+            //let control_points = CubicBezier::get_control_points(&coefficients);
+            //let cubic_bezier = CubicBezier::new(control_points);
+            //let p_vals = cubic_bezier.approximate_linear(eps);
+            //s_vals.push(s_start);
+            //for p in p_vals {
+            //    s_vals.push(p.0 * (s_end - s_start) + s_start);
             //}
+            s_vals.push(s_start);
+            s_vals.push(s_end);
         }
 
         if s_end - s_vals.last().unwrap() < 1.0e-9 && s_vals.len() != 1 {
