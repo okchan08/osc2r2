@@ -89,6 +89,7 @@ impl RoadGeometry for Spiral {
             retval.push(curr_s);
             curr_s += 10.0 * eps;
         }
+        retval.push(self.s0 + self.length);
         retval
     }
 

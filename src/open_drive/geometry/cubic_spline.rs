@@ -13,8 +13,15 @@ pub struct Poly3 {
 }
 
 impl Poly3 {
-    pub fn new(a: f64, b: f64, c: f64, d: f64) -> Self {
-        Poly3 { a, b, c, d }
+    pub fn new(s0: f64, a: f64, b: f64, c: f64, d: f64) -> Self {
+        /* ds = s - s0 => resolve to polynomial form */
+        /* make poly3s work on absolute s position => makes CubicSpline::add work */
+        Poly3 {
+            a: a - b * s0 + c * s0 * s0 - d * s0 * s0 * s0,
+            b: b - 2.0 * c * s0 + 3.0 * d * s0 * s0,
+            c: c - 3.0 * d * s0,
+            d: d,
+        }
     }
 
     pub fn is_nan(&self) -> bool {
@@ -132,15 +139,13 @@ impl CubicSpline {
                     },
                 );
             } else {
-                retval.s0_to_poly.insert(
-                    s0,
-                    Poly3::new(
-                        this_poly.a + other_poly.a,
-                        this_poly.b + other_poly.b,
-                        this_poly.c + other_poly.c,
-                        this_poly.d + other_poly.d,
-                    ),
-                );
+                let poly3 = Poly3 {
+                    a: this_poly.a + other_poly.a,
+                    b: this_poly.b + other_poly.b,
+                    c: this_poly.c + other_poly.c,
+                    d: this_poly.d + other_poly.d,
+                };
+                retval.s0_to_poly.insert(s0, poly3);
             }
         }
         retval
@@ -161,7 +166,7 @@ impl CubicSpline {
     }
 
     pub fn get_poly(&self, s: f64, extend_start: bool) -> Poly3 {
-        let nan_poly = Poly3::new(f64::NAN, f64::NAN, f64::NAN, f64::NAN);
+        let nan_poly = Poly3::new(f64::NAN, f64::NAN, f64::NAN, f64::NAN, f64::NAN);
         if self.s0_to_poly.is_empty() {
             return nan_poly;
         }

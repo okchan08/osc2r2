@@ -241,7 +241,7 @@ impl Road {
         // explicitly specified in OpenDRIVE file
         road.ref_line
             .elevation_profile
-            .append_poly3(0.0, Poly3::new(0.0, 0.0, 0.0, 0.0));
+            .append_poly3(0.0, Poly3::new(0.0, 0.0, 0.0, 0.0, 0.0));
 
         if let Some(elevation_profile_node) = elevation_profile_node_opt {
             for elevation_node in elevation_profile_node.children() {
@@ -275,11 +275,11 @@ impl Road {
                     .unwrap();
                 road.ref_line
                     .elevation_profile
-                    .append_poly3(s0, Poly3::new(a, b, c, d));
+                    .append_poly3(s0, Poly3::new(s0, a, b, c, d));
             }
         }
         road.lane_offset
-            .append_poly3(0.0, Poly3::new(0.0, 0.0, 0.0, 0.0));
+            .append_poly3(0.0, Poly3::new(0.0, 0.0, 0.0, 0.0, 0.0));
         for laneoffset_node in laneoffset_node.children() {
             if !laneoffset_node.has_tag_name("laneOffset") {
                 continue;
@@ -309,7 +309,8 @@ impl Road {
                 .unwrap_or("0.0")
                 .parse()
                 .unwrap();
-            road.lane_offset.append_poly3(s0, Poly3::new(a, b, c, d));
+            road.lane_offset
+                .append_poly3(s0, Poly3::new(s0, a, b, c, d));
         }
     }
 
@@ -336,23 +337,25 @@ impl Road {
         for s_val in s_vals.iter() {
             let mut vn_inner_brdr = Vec3::new(0.0, 0.0, 0.0);
             let t_inner_brdr = lane.inner_border.get(s_val.0, 0.0, true);
-            out_mesh
-                .vertices
-                .push(self.get_surface_pt(s_val.0, t_inner_brdr, &mut vn_inner_brdr));
-            out_mesh.normals.push(vn_inner_brdr);
-            out_mesh
-                .st_coordinates
-                .push(Vec2::new(s_val.0, t_inner_brdr));
+            let inner_mesh = self.get_surface_pt(s_val.0, t_inner_brdr, &mut vn_inner_brdr);
+            if inner_mesh.is_some() {
+                out_mesh.vertices.push(inner_mesh.unwrap());
+                out_mesh.normals.push(vn_inner_brdr);
+                out_mesh
+                    .st_coordinates
+                    .push(Vec2::new(s_val.0, t_inner_brdr));
+            }
 
             let mut vn_outer_brdr = Vec3::new(0.0, 0.0, 0.0);
             let t_outer_brdr = lane.outer_border.get(s_val.0, 0.0, true);
-            out_mesh
-                .vertices
-                .push(self.get_surface_pt(s_val.0, t_outer_brdr, &mut vn_outer_brdr));
-            out_mesh.normals.push(vn_outer_brdr);
-            out_mesh
-                .st_coordinates
-                .push(Vec2::new(s_val.0, t_outer_brdr));
+            let outer_mesh = self.get_surface_pt(s_val.0, t_outer_brdr, &mut vn_outer_brdr);
+            if outer_mesh.is_some() {
+                out_mesh.vertices.push(outer_mesh.unwrap());
+                out_mesh.normals.push(vn_outer_brdr);
+                out_mesh
+                    .st_coordinates
+                    .push(Vec2::new(s_val.0, t_outer_brdr));
+            }
         }
 
         let num_pts = out_mesh.vertices.len();
@@ -392,7 +395,7 @@ impl Road {
         }
     }
 
-    fn get_surface_pt(&self, s: f64, t: f64, vn: &mut Vec3) -> Vec3 {
+    fn get_surface_pt(&self, s: f64, t: f64, vn: &mut Vec3) -> Option<Vec3> {
         let lanesection_s0 = self.get_lanesection_s0(s);
         if lanesection_s0.is_nan() {
             panic!(
@@ -400,20 +403,15 @@ impl Road {
                 s, self.length
             );
         }
-        let lanesection = self
-            .s_to_lanesection
-            .get(&OrderedFloat(lanesection_s0))
-            .unwrap();
-        let lane = lanesection
-            .id_to_lane
-            .get(&lanesection.get_lane_id(s, t))
-            .unwrap();
+        let lanesection = self.s_to_lanesection.get(&OrderedFloat(lanesection_s0))?;
+        let lane_id = lanesection.get_lane_id(s, t)?;
+        let lane = lanesection.id_to_lane.get(&lane_id).unwrap();
 
         // TODO handle height here.
         let _t_inner_brdr = lane.inner_border.get(s, 0.0, true);
         let h_t = 0.0;
 
-        self.get_xyz(s, t, h_t, Some(vn))
+        Some(self.get_xyz(s, t, h_t, Some(vn)))
     }
 
     pub fn get_lanesection(&self, s: f64) -> Option<&LaneSection> {
@@ -450,17 +448,19 @@ impl Road {
             let t_edge_a = lane.outer_border.get(s_val.0, 0.0, true)
                 + roadmark.width * 0.5
                 + roadmark.t_offset;
-            out_mesh
-                .vertices
-                .push(self.get_surface_pt(s_val.0, t_edge_a, &mut vn_edge_a));
-            out_mesh.normals.push(vn_edge_a);
+            let edge_a_mesh = self.get_surface_pt(s_val.0, t_edge_a, &mut vn_edge_a);
+            if edge_a_mesh.is_some() {
+                out_mesh.vertices.push(edge_a_mesh.unwrap());
+                out_mesh.normals.push(vn_edge_a);
+            }
 
             let mut vn_edge_b = Vec3::new(0.0, 0.0, 0.0);
             let t_edge_b = t_edge_a - roadmark.width;
-            out_mesh
-                .vertices
-                .push(self.get_surface_pt(s_val.0, t_edge_b, &mut vn_edge_b));
-            out_mesh.normals.push(vn_edge_b);
+            let edge_b_mesh = self.get_surface_pt(s_val.0, t_edge_b, &mut vn_edge_b);
+            if edge_b_mesh.is_some() {
+                out_mesh.vertices.push(edge_b_mesh.unwrap());
+                out_mesh.normals.push(vn_edge_b);
+            }
         }
 
         let num_pts = out_mesh.vertices.len();

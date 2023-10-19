@@ -98,8 +98,10 @@ impl Lane {
                     .unwrap_or("0.0")
                     .parse()
                     .unwrap();
-                lane.lane_width
-                    .append_poly3(lanesection_s + s_offset, Poly3::new(a, b, c, d))
+                lane.lane_width.append_poly3(
+                    lanesection_s + s_offset,
+                    Poly3::new(lanesection_s + s_offset, a, b, c, d),
+                )
             }
 
             // TODO parse lane height

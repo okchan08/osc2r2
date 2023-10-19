@@ -63,8 +63,8 @@ impl RefLine {
         let mut s_vals = BTreeSet::new();
         s_vals.insert(OrderedFloat(s_start));
 
-        for s0_geom in s0_geom_range {
-            let s_vals_geom = s0_geom.1.approximate_linear(eps);
+        for (_, geom) in s0_geom_range {
+            let s_vals_geom = geom.approximate_linear(eps);
 
             if s_vals_geom.len() < 2 {
                 panic!("expected at least two sampled points");
