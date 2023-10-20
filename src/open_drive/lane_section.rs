@@ -1,6 +1,7 @@
 use crate::open_drive::lane::Lane;
 use std::collections::BTreeMap;
 
+use ordered_float::OrderedFloat;
 use roxmltree;
 
 use super::road::Road;
@@ -113,6 +114,7 @@ impl LaneSection {
         }
     }
 
+    #[allow(unused_assignments)]
     pub fn get_lane_id(&self, s: f64, t: f64) -> Option<i32> {
         if self
             .id_to_lane
@@ -125,17 +127,42 @@ impl LaneSection {
             return Some(0);
         }
 
-        for (lane_id, lane) in self.id_to_lane.iter() {
-            let outer_brdr_t = lane.outer_border.get(s, 0.0, true);
-            let inner_brdr_t = lane.inner_border.get(s, 0.0, true);
-            if *lane_id < 0 && outer_brdr_t < t && t <= inner_brdr_t {
-                return Some(*lane_id);
+        // TODO waiting for Rust to implement BTreeMap::Cursor https://doc.rust-lang.org/std/collections/btree_map/struct.Cursor.html
+        let outer_t_to_lane_id = self
+            .id_to_lane
+            .iter()
+            .map(|(lane_id, lane)| {
+                let outer_t = lane.outer_border.get(s, 0.0, true);
+                (OrderedFloat(outer_t), *lane_id)
+            })
+            .collect::<BTreeMap<OrderedFloat<f64>, i32>>();
+
+        let mut border_iter = outer_t_to_lane_id.range(OrderedFloat(t)..);
+        let mut current_candidate = None;
+        match border_iter.next() {
+            None => {
+                // Reaches the end of the map.
+                border_iter = outer_t_to_lane_id
+                    .range(OrderedFloat(-f64::INFINITY)..(OrderedFloat(f64::INFINITY)));
+                current_candidate = border_iter.next_back();
             }
-            if *lane_id > 0 && inner_brdr_t <= t && t < outer_brdr_t {
-                return Some(*lane_id);
+            Some(val) => {
+                current_candidate = Some(val);
             }
         }
-        // TODO this lane id is wrong, need to fix the search algorithm.
-        Some(0)
+
+        match current_candidate {
+            None => None,
+            Some(val) => {
+                if *val.1 <= 0 && val.0 .0 != t {
+                    match border_iter.next_back() {
+                        None => Some(*val.1),
+                        Some(final_val) => Some(*final_val.1),
+                    }
+                } else {
+                    Some(*val.1)
+                }
+            }
+        }
     }
 }

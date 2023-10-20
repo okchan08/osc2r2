@@ -14,7 +14,7 @@ use bevy::{
 
 fn main() {
     let odr = BevyOpenDriveWrapper {
-        open_drive: osc2r2::open_drive::OpenDrive::parse_open_drive("./Town04.xodr"),
+        open_drive: osc2r2::open_drive::OpenDrive::parse_open_drive("./Town02.xodr"),
     };
 
     App::new()
@@ -197,9 +197,12 @@ fn setup_actors(
     odr: Res<BevyOpenDriveWrapper>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
+    let road_id = "0";
+    let lane_id = 1;
+    let s = 10.0;
     let spawn_transform = odr
         .open_drive
-        .get_road_transform(&"52".to_string(), 1, 0.0)
+        .get_road_transform(&road_id.to_string(), &lane_id, &s)
         .unwrap();
     let spawn_direction = &spawn_transform.direction();
     // Bevy coordinate system is Y up
@@ -232,11 +235,11 @@ fn setup_actors(
         },
         Actor {
             lane_key: LaneKey {
-                road_id: "4".to_string(),
-                lanesection_s0: OrderedFloat(0.0),
-                lane_id: -1,
+                road_id: road_id.to_string(),
+                lanesection_s0: OrderedFloat(s),
+                lane_id,
             },
-            s: 1.0,
+            s,
             height,
         },
     ));
@@ -257,7 +260,7 @@ fn update_actor(
         {
             let Some(spawn_transform) =
                 odr.open_drive
-                    .get_road_transform(&lane_key.road_id, lane_key.lane_id, next_s) else {return;};
+                    .get_road_transform(&lane_key.road_id, &lane_key.lane_id, &next_s) else {return;};
             // TODO fix lane id
             let spawn_direction = &spawn_transform.direction();
 
