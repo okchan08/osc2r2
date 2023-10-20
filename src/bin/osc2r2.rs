@@ -197,7 +197,7 @@ fn setup_actors(
     odr: Res<BevyOpenDriveWrapper>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let road_id = "0";
+    let road_id = "1";
     let lane_id = 1;
     let s = 10.0;
     let spawn_transform = odr

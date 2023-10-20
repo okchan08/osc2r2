@@ -12,6 +12,7 @@ mod transform;
 mod utils;
 
 use ordered_float::OrderedFloat;
+use rand::{thread_rng, Rng};
 
 use crate::open_drive::{
     mesh::{LaneMesh, RoadMarkMesh, RoadNetworkMesh},
@@ -79,7 +80,7 @@ impl OpenDrive {
                     continue;
                 }
 
-                let next_road = self.id_to_road.get(&road_link.id).unwrap();
+                let Some(next_road) = self.id_to_road.get(&road_link.id) else {continue;};
                 let next_road_contact_lanesection =
                     if road_link.contact_point == RoadContactPoint::Start {
                         next_road.s_to_lanesection.first_key_value().unwrap().1
@@ -183,17 +184,6 @@ impl OpenDrive {
                     if !is_succ_junc && !is_pred_junc {
                         continue;
                     }
-                    if connecting_road.id == "0" || incoming_road.id == "0" {
-                        println!(
-                            "is_succ_junc = {}  is_pred_junc = {}  junc_id = {}  conn_id = {} incoming_road = {} connecting_road = {}",
-                            is_succ_junc,
-                            is_pred_junc,
-                            junction.id,
-                            connection.get_info().id,
-                            incoming_road.id,
-                            connecting_road.id
-                        );
-                    }
 
                     let incoming_lanesec = if is_succ_junc {
                         incoming_road.s_to_lanesection.last_key_value().unwrap().1
@@ -230,9 +220,6 @@ impl OpenDrive {
                                 lanesection_s0: OrderedFloat(connecting_lanesec.s0),
                                 lane_id: to_lane.id,
                             };
-                            if connecting_road.id == "0" || incoming_road.id == "0" {
-                                println!("from: {:?}  to: {:?}", from, to);
-                            }
 
                             self.road_topology.add_edge(RoadEdge { from, to });
                         }
@@ -280,18 +267,24 @@ impl OpenDrive {
                             road_id: lane_key.road_id.clone(),
                             lanesection_s0: *last_lanesec_s0,
                             lane_id: lane_key.lane_id,
-                        })
+                        })?
                     } else {
                         let first_lanesec_s0 = road.s_to_lanesection.first_key_value().unwrap().0;
                         self.road_topology.get_lane_predecessor(&LaneKey {
                             road_id: lane_key.road_id.clone(),
                             lanesection_s0: *first_lanesec_s0,
                             lane_id: lane_key.lane_id,
-                        })
+                        })?
                     };
 
                     // choose first connecting lane.
-                    let next_lane_key = lane_candidates?.iter().next_back()?;
+                    let next_lane_key = {
+                        let len = lane_candidates.len();
+                        let mut rand_gen = thread_rng();
+                        let num = rand_gen.gen_range(0..len);
+
+                        lane_candidates.iter().nth(num)?
+                    };
 
                     let next_s = if lane_key.lane_id < 0 {
                         let delta_s = new_s - road.length;
@@ -303,17 +296,6 @@ impl OpenDrive {
                         next_road.length - delta_s
                     };
 
-                    println!("current: {:?}", lane_key);
-                    println!("candidate {:?}", lane_candidates);
-                    println!(
-                        "next {:?}  current_s = {} next_s = {}",
-                        next_lane_key, s, next_s
-                    );
-                    println!();
-                    //let mut delta_s = new_s;
-                    //if next_lane_key.road_id != lane_key.road_id {
-                    //    delta_s = new_s - road.length;
-                    //}
                     return Some((next_lane_key, next_s));
                 }
                 Some(_) => {

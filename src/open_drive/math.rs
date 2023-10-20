@@ -1,3 +1,4 @@
+use std::ops::Sub;
 #[derive(Debug, Clone, Copy)]
 pub struct Vec2(pub f64, pub f64);
 
@@ -26,6 +27,22 @@ impl Vec3 {
             a.2 * b.0 - a.0 * b.2,
             a.0 * b.1 - a.1 * b.0,
         )
+    }
+
+    pub fn squared_norm(&self) -> f64 {
+        self.0 * self.0 + self.1 * self.1 + self.2 * self.2
+    }
+
+    pub fn norm(&self) -> f64 {
+        (self.0 * self.0 + self.1 * self.1 + self.2 * self.2).sqrt()
+    }
+}
+
+impl Sub for Vec3 {
+    type Output = Self;
+
+    fn sub(self, other: Self) -> Self::Output {
+        Self(self.0 - other.0, self.1 - other.1, self.2 - other.2)
     }
 }
 
