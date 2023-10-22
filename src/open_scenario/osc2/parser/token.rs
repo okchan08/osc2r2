@@ -7,12 +7,39 @@ pub enum Token {
     Dedent,
     Newline,
     EndOfFile,
-    Colon,
-    Comma,
-    Rpar,
-    Lpar,
-    Rarrow,
-    Semicolon,
+
+    // Reserved operator and delimiter keywords
+    Quotation,       // '
+    DoubleQuotation, // "
+    Period,          // .
+    Comma,           // ,
+    Colon,           // :
+    Equal,           // =
+    At,              // @
+    Rarrow,          // ->
+    Vbar,            // |
+    Lpar,            // (
+    Rpar,            // )
+    Lsqb,            // [
+    Rsqb,            // ]
+    Question,        // ?
+    REqArrow,        // =>
+    And,             // and
+    Or,              // or
+    Not,             // not
+    DoubleEq,        // ==
+    NotEq,           //  !=
+    Less,            // <
+    LessEq,          // <=
+    Greater,         // >
+    GreaterEq,       // >=
+    In,              // in
+    Plus,            // +
+    Minus,           // -
+    Start,           // *
+    Slash,           // /
+    Percent,         // %
+
     // Reserved keywords
     Action,
     Actor,
@@ -74,21 +101,44 @@ impl fmt::Display for Token {
             Identifier { identifier } => write!(f, "'{}'", identifier),
             Indent => f.write_str("indent"),
             Dedent => f.write_str("dedent"),
-            Actor => f.write_str("actor"),
             Newline => f.write_str("newline"),
             EndOfFile => f.write_str("EOF"),
-            Colon => f.write_str(":"),
+
+            Quotation => todo!(),
+            DoubleQuotation => todo!(),
+            Period => todo!(),
             Comma => f.write_str(","),
-            Def => f.write_str("def"),
-            Rpar => f.write_str(")"),
-            Lpar => f.write_str("("),
-            Is => f.write_str("is"),
-            Undefined => f.write_str("undefined"),
+            Colon => f.write_str(":"),
+            Equal => todo!(),
+            At => todo!(),
             Rarrow => f.write_str("->"),
-            Semicolon => f.write_str(";"),
+            Vbar => todo!(),
+            Lpar => f.write_str("("),
+            Rpar => f.write_str(")"),
+            Lsqb => todo!(),
+            Rsqb => todo!(),
+            Question => todo!(),
+            REqArrow => todo!(),
+            And => todo!(),
+            Or => todo!(),
+            Not => todo!(),
+            DoubleEq => todo!(),
+            NotEq => todo!(),
+            Less => todo!(),
+            LessEq => todo!(),
+            Greater => todo!(),
+            GreaterEq => todo!(),
+            In => todo!(),
+            Plus => todo!(),
+            Minus => todo!(),
+            Start => todo!(),
+            Slash => todo!(),
+            Percent => todo!(),
+
             Action => {
                 todo!()
             }
+            Actor => f.write_str("actor"),
             As => {
                 todo!()
             }
@@ -101,6 +151,7 @@ impl fmt::Display for Token {
             Cover => {
                 todo!()
             }
+            Def => f.write_str("def"),
             Default => {
                 todo!()
             }
@@ -155,6 +206,7 @@ impl fmt::Display for Token {
             Int => {
                 todo!()
             }
+            Is => f.write_str("is"),
             It => {
                 todo!()
             }
@@ -209,6 +261,7 @@ impl fmt::Display for Token {
             Type => {
                 todo!()
             }
+            Undefined => f.write_str("undefined"),
             Uint => {
                 todo!()
             }

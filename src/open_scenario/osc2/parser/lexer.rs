@@ -6,7 +6,7 @@ use crate::open_scenario::osc2::parser::consts::KEYWORD_MAP;
 use super::{
     consts::{ASCII_LOWER, ASCII_UPPER},
     errors::{LexicalError, LexicalErrorType},
-    location::{self, Location},
+    location::Location,
     token::Token,
 };
 
@@ -243,7 +243,7 @@ where
 
         // Determine indent or dedent
         let current_indentation = self.indentations.current();
-        let ordering = indentation_level.compare_strict(current_indentation, &self.get_pos())?;
+        let ordering = indentation_level.compare_strict(current_indentation, &self.pos())?;
         match ordering {
             Ordering::Equal => {
                 // Same indentation
@@ -251,7 +251,7 @@ where
             Ordering::Greater => {
                 // new indentation
                 self.indentations.push(indentation_level);
-                let tok_pos = self.get_pos();
+                let tok_pos = self.pos();
                 self.emit((tok_pos, Token::Indent, tok_pos));
             }
             Ordering::Less => {
@@ -264,7 +264,7 @@ where
                     match ordering {
                         Ordering::Less => {
                             self.indentations.pop();
-                            let tok_pos = self.get_pos();
+                            let tok_pos = self.pos();
                             self.emit((tok_pos, Token::Dedent, tok_pos));
                         }
                         Ordering::Equal => {
@@ -274,7 +274,7 @@ where
                         Ordering::Greater => {
                             return Err(LexicalError {
                                 error: LexicalErrorType::IndentationError,
-                                location: self.get_pos(),
+                                location: self.pos(),
                             })
                         }
                     }
@@ -299,7 +299,7 @@ where
                         // mixure of tab and space for indentation.
                         return Err(LexicalError {
                             error: LexicalErrorType::TabsAfterSpaces,
-                            location: self.get_pos(),
+                            location: self.pos(),
                         });
                     }
                     tabs += 1;
@@ -353,14 +353,14 @@ where
 
     fn lex_identifier(&mut self) -> LexResult {
         let mut name = String::new();
-        let start_pos = self.get_pos();
+        let start_pos = self.pos();
 
         name.push(self.next_char().expect("unnexpected EOF"));
         while self.is_identifier_continuation() {
             name.push(self.next_char().expect("unnexpected EOF"))
         }
 
-        let end_pos = self.get_pos();
+        let end_pos = self.pos();
 
         if let Some(token) = KEYWORD_MAP.get(name.as_str()) {
             Ok((start_pos, token.clone(), end_pos))
@@ -379,7 +379,7 @@ where
             }
         } else {
             // reached end of file
-            let start_pos = self.get_pos();
+            let start_pos = self.pos();
 
             // Raise an error if there's remaining unclosed paranthesis
             if self.nesting > 0 {
@@ -412,9 +412,9 @@ where
                 self.consume_single_char(Token::Colon);
             }
             '\n' => {
-                let start_pos = self.get_pos();
+                let start_pos = self.pos();
                 self.next_char();
-                let end_pos = self.get_pos();
+                let end_pos = self.pos();
                 if self.nesting == 0 {
                     self.at_begin_of_line = true;
                     self.emit((start_pos, Token::Newline, end_pos));
@@ -437,12 +437,12 @@ where
                 self.consume_single_char(Token::Rpar);
             }
             '-' => {
-                let start_pos = self.get_pos();
+                let start_pos = self.pos();
                 self.next_char();
                 match self.window[0] {
                     Some('>') => {
                         self.next_char();
-                        let end_pos = self.get_pos();
+                        let end_pos = self.pos();
                         self.emit((start_pos, Token::Rarrow, end_pos));
                     }
                     _ => todo!(),
@@ -456,14 +456,14 @@ where
     }
 
     fn consume_single_char(&mut self, token: Token) {
-        let start_pos = self.get_pos();
+        let start_pos = self.pos();
         self.next_char()
             .expect(format!("expect one char at {:?}", start_pos).as_str());
-        let end_pos = self.get_pos();
+        let end_pos = self.pos();
         self.emit((start_pos, token, end_pos));
     }
 
-    fn get_pos(&self) -> Location {
+    fn pos(&self) -> Location {
         self.location
     }
 
