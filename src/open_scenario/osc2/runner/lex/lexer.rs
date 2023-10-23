@@ -1,7 +1,9 @@
 use core::ops::Index;
 use std::{cmp::Ordering, slice::SliceIndex};
 
-use crate::open_scenario::osc2::parser::consts::KEYWORD_MAP;
+use bevy::utils::tracing::Span;
+
+use super::consts::KEYWORD_MAP;
 
 use super::{
     consts::{ASCII_LOWER, ASCII_UPPER},
@@ -115,7 +117,12 @@ where
 
 // represents token location.
 // (first location of token in file, found token type, last location of token in file)
-pub type Spanned = (Location, Token, Location);
+#[derive(Debug, PartialEq)]
+pub struct Spanned {
+    pub token: Token,
+    pub start_loc: Location,
+    pub end_loc: Location,
+}
 
 pub type LexResult = Result<Spanned, LexicalError>;
 
@@ -252,7 +259,11 @@ where
                 // new indentation
                 self.indentations.push(indentation_level);
                 let tok_pos = self.pos();
-                self.emit((tok_pos, Token::Indent, tok_pos));
+                self.emit(Spanned {
+                    start_loc: tok_pos,
+                    token: Token::Indent,
+                    end_loc: tok_pos,
+                });
             }
             Ordering::Less => {
                 // One or more dedentation
@@ -265,7 +276,11 @@ where
                         Ordering::Less => {
                             self.indentations.pop();
                             let tok_pos = self.pos();
-                            self.emit((tok_pos, Token::Dedent, tok_pos));
+                            self.emit(Spanned {
+                                token: Token::Dedent,
+                                start_loc: tok_pos,
+                                end_loc: tok_pos,
+                            });
                         }
                         Ordering::Equal => {
                             // matching indentation found
@@ -363,9 +378,17 @@ where
         let end_pos = self.pos();
 
         if let Some(token) = KEYWORD_MAP.get(name.as_str()) {
-            Ok((start_pos, token.clone(), end_pos))
+            Ok(Spanned {
+                token: token.clone(),
+                start_loc: start_pos,
+                end_loc: end_pos,
+            })
         } else {
-            Ok((start_pos, Token::Identifier { identifier: name }, end_pos))
+            Ok(Spanned {
+                start_loc: start_pos,
+                token: Token::Identifier { identifier: name },
+                end_loc: end_pos,
+            })
         }
     }
 
@@ -392,16 +415,28 @@ where
             // Insert one newline if we are at the middle of a line
             if !self.at_begin_of_line {
                 self.at_begin_of_line = true;
-                self.emit((start_pos, Token::Newline, start_pos));
+                self.emit(Spanned {
+                    token: Token::Newline,
+                    start_loc: start_pos,
+                    end_loc: start_pos,
+                });
             }
 
             // Then flush remaining indentation
             while !self.indentations.is_empty() {
                 self.indentations.pop();
-                self.emit((start_pos, Token::Dedent, start_pos));
+                self.emit(Spanned {
+                    token: Token::Dedent,
+                    start_loc: start_pos,
+                    end_loc: start_pos,
+                });
             }
 
-            self.emit((start_pos, Token::EndOfFile, start_pos));
+            self.emit(Spanned {
+                token: Token::EndOfFile,
+                start_loc: start_pos,
+                end_loc: start_pos,
+            });
         }
         Ok(())
     }
@@ -417,7 +452,11 @@ where
                 let end_pos = self.pos();
                 if self.nesting == 0 {
                     self.at_begin_of_line = true;
-                    self.emit((start_pos, Token::Newline, end_pos));
+                    self.emit(Spanned {
+                        token: Token::Newline,
+                        start_loc: start_pos,
+                        end_loc: end_pos,
+                    });
                 }
             }
             ' ' | '\t' | '\x0C' => {
@@ -443,7 +482,11 @@ where
                     Some('>') => {
                         self.next_char();
                         let end_pos = self.pos();
-                        self.emit((start_pos, Token::Rarrow, end_pos));
+                        self.emit(Spanned {
+                            token: Token::Rarrow,
+                            start_loc: start_pos,
+                            end_loc: end_pos,
+                        });
                     }
                     _ => todo!(),
                 }
@@ -460,7 +503,11 @@ where
         self.next_char()
             .expect(format!("expect one char at {:?}", start_pos).as_str());
         let end_pos = self.pos();
-        self.emit((start_pos, token, end_pos));
+        self.emit(Spanned {
+            token,
+            start_loc: start_pos,
+            end_loc: end_pos,
+        });
     }
 
     fn pos(&self) -> Location {
@@ -481,7 +528,10 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         let token = self.inner_next();
         match token {
-            Ok((_, Token::EndOfFile, _)) => None,
+            Ok(Spanned {
+                token: Token::EndOfFile,
+                ..
+            }) => None,
             r => Some(r),
         }
     }
@@ -495,7 +545,7 @@ mod tests {
 
     pub fn lex_source(source: &str) -> Vec<Token> {
         let lexer = make_tokenizer(source);
-        lexer.map(|x| x.unwrap().1).collect()
+        lexer.map(|x| x.unwrap().token).collect()
     }
 
     #[test]
