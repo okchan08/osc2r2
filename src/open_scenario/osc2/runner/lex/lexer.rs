@@ -22,7 +22,7 @@ impl IndentationLevel {
         &self,
         other: &IndentationLevel,
         location: &Location,
-        filename: &String,
+        filename: &str,
     ) -> Result<Ordering, LexicalError> {
         let self_tabs = self.tabs * 8;
         let other_tabs = other.tabs * 8;
@@ -32,7 +32,7 @@ impl IndentationLevel {
             return Err(LexicalError {
                 error: LexicalErrorType::IndentationError,
                 location: *location,
-                filename: filename.clone(),
+                filename: filename.to_owned(),
             });
         }
 
@@ -512,7 +512,7 @@ where
     fn consume_single_char(&mut self, token: Token) {
         let start_pos = self.pos();
         self.next_char()
-            .expect(format!("expect one char at {:?}", start_pos).as_str());
+            .unwrap_or_else(|| panic!("expect one char in {}:{:?}", self.filename, start_pos));
         let end_pos = self.pos();
         self.emit(Spanned {
             token,

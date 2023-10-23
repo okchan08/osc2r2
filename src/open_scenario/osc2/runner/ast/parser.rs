@@ -15,8 +15,8 @@ impl Spans {
         Self { source }
     }
 
-    pub fn iter<'a>(&'a self) -> SpanIterator<'a> {
-        SpanIterator::new(&self)
+    pub fn iter(&self) -> SpanIterator<'_> {
+        SpanIterator::new(self)
     }
 }
 

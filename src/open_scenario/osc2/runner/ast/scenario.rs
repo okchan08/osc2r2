@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use crate::open_scenario::osc2::runner::lex::token::Token;
 
 use super::{actor::Actor, errors::ParseError, parser::Spans};
@@ -15,17 +16,17 @@ struct ImportStatement {
 
 #[derive(Debug, Default)]
 enum OscDeclaration {
-    PhysicalTypeDeclaration,
+    PhysicalType,
     #[default]
-    UnitDeclaration,
-    EnumDeclaration,
-    StructDeclaration,
-    ActorDeclaration(Actor),
-    ActionDeclaration,
-    ScenarioDeclaration,
-    ModifierDeclaration,
+    Unit,
+    Enum,
+    Struct,
+    Actor(Actor),
+    Action,
+    Scenario,
+    Modifier,
     TypeExtension,
-    GlobalParameterDeclaration,
+    GlobalParameter,
 }
 
 impl Scenario {
@@ -34,11 +35,9 @@ impl Scenario {
         let mut span_iter = spans.iter();
         while let Some(span) = span_iter.next() {
             match span.token {
-                Token::Actor => scenario
-                    .osc_declarations
-                    .push(OscDeclaration::ActorDeclaration(
-                        Actor::parse_actor_declaration(&mut span_iter)?,
-                    )),
+                Token::Actor => scenario.osc_declarations.push(OscDeclaration::Actor(
+                    Actor::parse_actor_declaration(&mut span_iter)?,
+                )),
                 Token::Import => {
                     todo!("import is not supported yet")
                 }

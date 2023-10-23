@@ -23,17 +23,13 @@ impl ParseError {
                 .red()
                 .bold()
             );
-            print!("\n");
+            println!();
             println!("{}", lines[error_loc.row() - 1]);
             println!(
                 "{}",
-                format!(
-                    "{}^ {}",
-                    " ".repeat(error_loc.column()),
-                    self.error.to_string()
-                )
-                .red()
-                .bold()
+                format!("{}^ {}", " ".repeat(error_loc.column()), self.error)
+                    .red()
+                    .bold()
             );
         }
     }
@@ -60,13 +56,12 @@ impl fmt::Display for ParseErrorType {
             UnexpectedToken { found, expected } => f.write_str(
                 format!(
                     "expected {}, found {}",
-                    //found.to_string(),
                     expected
-                        .into_iter()
+                        .iter()
                         .map(|token| token.to_string())
                         .collect::<Vec<String>>()
                         .join(","),
-                    found.to_string(),
+                    found,
                 )
                 .as_str(),
             ),

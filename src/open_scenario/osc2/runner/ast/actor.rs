@@ -1,3 +1,4 @@
+#![allow(dead_code, unused_assignments)]
 use std::collections::HashMap;
 
 use crate::open_scenario::osc2::runner::lex::lexer::Spanned;
@@ -19,14 +20,19 @@ pub(super) struct Actor {
     member_declarations: Vec<ActorMemberDeclaration>,
 }
 
+struct ActorInheritanceDeclaration {
+    parent_actor_name: Identifier,
+    initial_field_values: HashMap<Identifier, Value>,
+}
+
 #[derive(Debug, Default)]
 enum ActorMemberDeclaration {
-    EventDeclaration(Event),
+    Event(Event),
     #[default]
-    FieldDeclaration,
-    ConstraintDeclaration(Constraint),
-    MethodDeclaration(Method),
-    CoverageDeclaration,
+    Field,
+    Constraint(Constraint),
+    Method(Method),
+    Coverage,
 }
 
 impl Actor {
@@ -35,11 +41,9 @@ impl Actor {
 
         let actor_name = Self::parse_actor_name(span_iter)?;
         actor.name = actor_name;
-        if let Some((parent_actor_name, initial_field_values)) =
-            Self::parse_actor_inheritance(span_iter)?
-        {
-            actor.parent_actor = Some(parent_actor_name);
-            actor.initial_field_values = initial_field_values;
+        if let Some(actor_inheritance_decl) = Self::parse_actor_inheritance(span_iter)? {
+            actor.parent_actor = Some(actor_inheritance_decl.parent_actor_name);
+            actor.initial_field_values = actor_inheritance_decl.initial_field_values;
         }
 
         if let Some(span) = span_iter.peek(0) {
@@ -133,13 +137,13 @@ impl Actor {
 
     fn parse_actor_inheritance(
         span_iter: &mut SpanIterator,
-    ) -> Result<Option<(Identifier, HashMap<Identifier, Value>)>, ParseError> {
+    ) -> Result<Option<ActorInheritanceDeclaration>, ParseError> {
         if let Some(span) = span_iter.peek(0) {
             match span.token {
                 Token::Inherits => {
                     span_iter.next(); // consume "intehit" token.
                     if let Some(parent_actor_name_span) = span_iter.next() {
-                        let parent_actor_name = match parent_actor_name_span {
+                        let _parent_actor_name = match parent_actor_name_span {
                             Spanned {
                                 token: Token::Identifier { identifier },
                                 ..
@@ -158,7 +162,10 @@ impl Actor {
                         }?;
                         todo!("field initialization in actor inheritance is not supported yet");
                         // TODO need to parse field initialization here.
-                        //Ok(Some((parent_actor_name, HashMap::new())))
+                        // Ok(Some(ActorInheritanceDeclaration {
+                        //     _parent_actor_name,
+                        //     initial_field_values: HashMap::new(),
+                        // }))
                     } else {
                         Err(ParseError {
                             error: ParseErrorType::EndOfFile,
@@ -185,7 +192,7 @@ impl Actor {
                         // skip empty line.
                         span_iter.next();
                     }
-                    Token::Event => members.push(ActorMemberDeclaration::EventDeclaration(
+                    Token::Event => members.push(ActorMemberDeclaration::Event(
                         Event::parse_event(span_iter)?,
                     )),
                     Token::Identifier { .. } => {
@@ -198,15 +205,15 @@ impl Actor {
                     }
                     Token::Keep | Token::RemoveDefault => {
                         // constraint decl
-                        members.push(ActorMemberDeclaration::ConstraintDeclaration(
+                        members.push(ActorMemberDeclaration::Constraint(
                             Constraint::parse_constraint(span_iter)?,
                         ));
                     }
                     Token::Def => {
                         // method decl
-                        members.push(ActorMemberDeclaration::MethodDeclaration(
-                            Method::parse_method(span_iter)?,
-                        ));
+                        members.push(ActorMemberDeclaration::Method(Method::parse_method(
+                            span_iter,
+                        )?));
                     }
                     Token::Cover | Token::Record => {
                         // coverage decl.
@@ -225,7 +232,7 @@ impl Actor {
                 }
             } else {
                 // we expect at least one member declaration.
-                if members.len() == 0 {
+                if members.is_empty() {
                     return Err(ParseError {
                         error: ParseErrorType::ActorDeclarationError,
                         token_loc: None,
