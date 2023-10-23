@@ -422,15 +422,16 @@ where
                 });
             }
 
+            // TODO is this necessary?
             // Insert one newline if we are at the middle of a line
-            if !self.at_begin_of_line {
-                self.at_begin_of_line = true;
-                self.emit(Spanned {
-                    token: Token::Newline,
-                    start_loc: start_pos,
-                    end_loc: start_pos,
-                });
-            }
+            //if !self.at_begin_of_line {
+            //    self.at_begin_of_line = true;
+            //    self.emit(Spanned {
+            //        token: Token::Newline,
+            //        start_loc: start_pos,
+            //        end_loc: start_pos,
+            //    });
+            //}
 
             // Then flush remaining indentation
             while !self.indentations.is_empty() {

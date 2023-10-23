@@ -59,7 +59,7 @@ impl fmt::Display for ParseErrorType {
             EndOfFile => f.write_str("unexpected EOF"),
             UnexpectedToken { found, expected } => f.write_str(
                 format!(
-                    "expected [{}] found {}",
+                    "expected {}, found {}",
                     //found.to_string(),
                     expected
                         .into_iter()

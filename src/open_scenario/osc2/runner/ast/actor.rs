@@ -52,7 +52,10 @@ impl Actor {
                     // member declarations found.
                     // we expect colon + newline + indent before the actural declarations.
                     span_iter.next(); // consume colon
+                    let mut curr_loc = span.start_loc;
                     if let Some(span) = span_iter.next() {
+                        // expect newline token
+                        curr_loc = span.start_loc;
                         if span.token != Token::Newline {
                             return Err(ParseError {
                                 error: ParseErrorType::UnexpectedToken {
@@ -62,8 +65,18 @@ impl Actor {
                                 token_loc: Some(span.start_loc),
                             });
                         }
+                    } else {
+                        return Err(ParseError {
+                            error: ParseErrorType::UnexpectedToken {
+                                found: Token::EndOfFile,
+                                expected: vec![Token::Newline],
+                            },
+                            token_loc: Some(curr_loc),
+                        });
                     }
                     if let Some(span) = span_iter.next() {
+                        // expect indent token
+                        curr_loc = span.start_loc;
                         if span.token != Token::Indent {
                             return Err(ParseError {
                                 error: ParseErrorType::UnexpectedToken {
@@ -73,6 +86,14 @@ impl Actor {
                                 token_loc: Some(span.start_loc),
                             });
                         }
+                    } else {
+                        return Err(ParseError {
+                            error: ParseErrorType::UnexpectedToken {
+                                found: Token::EndOfFile,
+                                expected: vec![Token::Indent],
+                            },
+                            token_loc: Some(curr_loc),
+                        });
                     }
                     actor.member_declarations = Actor::parse_actor_member_declarations(span_iter)?;
                 }
