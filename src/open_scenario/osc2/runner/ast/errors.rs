@@ -1,5 +1,5 @@
 use colored::Colorize;
-use std::fmt::{self, format};
+use std::fmt;
 
 use crate::open_scenario::osc2::runner::lex::{location::Location, token::Token};
 
@@ -15,8 +15,15 @@ impl ParseError {
         if let Some(error_loc) = self.token_loc {
             println!(
                 "{}",
-                format!("ERROR {}:{}", error_loc.row(), error_loc.column()).red()
+                format!(
+                    "[ERROR]: line:{} col:{}",
+                    error_loc.row(),
+                    error_loc.column()
+                )
+                .red()
+                .bold()
             );
+            print!("\n");
             println!("{}", lines[error_loc.row() - 1]);
             println!(
                 "{}",
@@ -26,6 +33,7 @@ impl ParseError {
                     self.error.to_string()
                 )
                 .red()
+                .bold()
             );
         }
     }

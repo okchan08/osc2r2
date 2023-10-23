@@ -6,6 +6,7 @@ use super::location::Location;
 pub struct LexicalError {
     pub error: LexicalErrorType,
     pub location: Location,
+    pub filename: String,
 }
 
 #[derive(Debug, PartialEq)]

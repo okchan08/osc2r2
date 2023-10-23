@@ -1,8 +1,6 @@
 use core::ops::Index;
 use std::{cmp::Ordering, slice::SliceIndex};
 
-use bevy::utils::tracing::Span;
-
 use super::consts::KEYWORD_MAP;
 
 use super::{
@@ -24,6 +22,7 @@ impl IndentationLevel {
         &self,
         other: &IndentationLevel,
         location: &Location,
+        filename: &String,
     ) -> Result<Ordering, LexicalError> {
         let self_tabs = self.tabs * 8;
         let other_tabs = other.tabs * 8;
@@ -33,6 +32,7 @@ impl IndentationLevel {
             return Err(LexicalError {
                 error: LexicalErrorType::IndentationError,
                 location: *location,
+                filename: filename.clone(),
             });
         }
 
@@ -134,19 +134,21 @@ pub struct Lexer<T: Iterator<Item = char>> {
     indentations: Indentations,
     pending: Vec<Spanned>,
     location: Location,
+    filename: String,
 }
 
 #[inline]
-pub fn make_tokenizer(source: &str) -> impl Iterator<Item = LexResult> + '_ {
-    make_tokenizer_located(source, Location::new(0, 0))
+pub fn make_tokenizer(source: &str, filename: String) -> impl Iterator<Item = LexResult> + '_ {
+    make_tokenizer_located(source, Location::new(0, 0), filename)
 }
 
 pub fn make_tokenizer_located(
     source: &str,
     start_location: Location,
+    filename: String,
 ) -> impl Iterator<Item = LexResult> + '_ {
     let nlh = NewLineHandler::new(source.chars());
-    Lexer::new(nlh, start_location)
+    Lexer::new(nlh, start_location, filename)
 }
 
 // The newline handler is an iterator which collapses different newline
@@ -209,7 +211,7 @@ impl<T> Lexer<T>
 where
     T: Iterator<Item = char>,
 {
-    pub fn new(input: T, start: Location) -> Self {
+    pub fn new(input: T, start: Location, filename: String) -> Self {
         let mut lxr = Lexer {
             window: CharWindow::new(input),
             at_begin_of_line: true,
@@ -217,6 +219,7 @@ where
             indentations: Indentations::default(),
             pending: Vec::new(),
             location: start,
+            filename,
         };
 
         // Populate inner window by calling slide 3 times.
@@ -250,7 +253,8 @@ where
 
         // Determine indent or dedent
         let current_indentation = self.indentations.current();
-        let ordering = indentation_level.compare_strict(current_indentation, &self.pos())?;
+        let ordering =
+            indentation_level.compare_strict(current_indentation, &self.pos(), &self.filename)?;
         match ordering {
             Ordering::Equal => {
                 // Same indentation
@@ -270,8 +274,11 @@ where
                 // Pop other levels until matching level found.
                 loop {
                     let current_indentation = self.indentations.current();
-                    let ordering =
-                        indentation_level.compare_strict(current_indentation, &self.location)?;
+                    let ordering = indentation_level.compare_strict(
+                        current_indentation,
+                        &self.location,
+                        &self.filename,
+                    )?;
                     match ordering {
                         Ordering::Less => {
                             self.indentations.pop();
@@ -290,6 +297,7 @@ where
                             return Err(LexicalError {
                                 error: LexicalErrorType::IndentationError,
                                 location: self.pos(),
+                                filename: self.filename.clone(),
                             })
                         }
                     }
@@ -315,6 +323,7 @@ where
                         return Err(LexicalError {
                             error: LexicalErrorType::TabsAfterSpaces,
                             location: self.pos(),
+                            filename: self.filename.clone(),
                         });
                     }
                     tabs += 1;
@@ -409,6 +418,7 @@ where
                 return Err(LexicalError {
                     error: LexicalErrorType::EOF,
                     location: start_pos,
+                    filename: self.filename.clone(),
                 });
             }
 
@@ -544,7 +554,7 @@ mod tests {
     use super::*;
 
     pub fn lex_source(source: &str) -> Vec<Token> {
-        let lexer = make_tokenizer(source);
+        let lexer = make_tokenizer(source, "".to_string());
         lexer.map(|x| x.unwrap().token).collect()
     }
 
