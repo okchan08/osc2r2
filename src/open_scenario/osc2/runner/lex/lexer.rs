@@ -454,6 +454,10 @@ where
 
     fn consume_character(&mut self, c: char) -> Result<(), LexicalError> {
         match c {
+            '0'..='9' => {
+                let number = self.consume_number()?;
+                self.emit(number);
+            }
             ':' => {
                 self.consume_single_char(Token::Colon);
             }
@@ -499,14 +503,161 @@ where
                             end_loc: end_pos,
                         });
                     }
-                    _ => todo!(),
+                    _ => {
+                        let end_pos = self.pos();
+                        self.emit(Spanned {
+                            token: Token::Minus,
+                            start_loc: start_pos,
+                            end_loc: end_pos,
+                        });
+                    }
+                }
+            }
+            '#' => {
+                // comment until the end of line.
+                self.next_char();
+                while let Some(c) = self.window[0] {
+                    self.next_char();
+                    if c == '\n' {
+                        break;
+                    }
+                }
+            }
+            '=' => {
+                let start_pos = self.pos();
+                self.next_char();
+                match self.window[0] {
+                    Some('=') => {
+                        self.next_char();
+                        let end_pos = self.pos();
+                        self.emit(Spanned {
+                            token: Token::DoubleEq,
+                            start_loc: start_pos,
+                            end_loc: end_pos,
+                        });
+                    }
+                    Some(_) => {
+                        let end_pos = self.pos();
+                        self.emit(Spanned {
+                            token: Token::Equal,
+                            start_loc: start_pos,
+                            end_loc: end_pos,
+                        });
+                    }
+                    None => {
+                        return Err(LexicalError {
+                            error: LexicalErrorType::EOF,
+                            location: start_pos,
+                            filename: self.filename.to_owned(),
+                        });
+                    }
+                }
+            }
+            '.' => {
+                let start_pos = self.pos();
+                self.next_char();
+                match self.window[0] {
+                    Some('.') => {
+                        self.next_char();
+                        let end_pos = self.pos();
+                        self.emit(Spanned {
+                            token: Token::DoublePeriod,
+                            start_loc: start_pos,
+                            end_loc: end_pos,
+                        });
+                    }
+                    Some(_) => {
+                        let end_pos = self.pos();
+                        self.emit(Spanned {
+                            token: Token::Period,
+                            start_loc: start_pos,
+                            end_loc: end_pos,
+                        });
+                    }
+                    None => {
+                        return Err(LexicalError {
+                            error: LexicalErrorType::EOF,
+                            location: start_pos,
+                            filename: self.filename.to_owned(),
+                        });
+                    }
                 }
             }
             _ => {
-                todo!();
+                return Err(LexicalError {
+                    error: LexicalErrorType::NotSupportedYet,
+                    location: self.pos(),
+                    filename: self.filename.to_owned(),
+                });
             }
         }
         Ok(())
+    }
+
+    // Test if a digit is of a certain radix.
+    fn is_digit_of_radix(c: Option<char>, radix: u32) -> bool {
+        match radix {
+            2 => matches!(c, Some('0'..='1')),
+            8 => matches!(c, Some('0'..='7')),
+            10 => matches!(c, Some('0'..='9')),
+            16 => matches!(c, Some('0'..='9') | Some('a'..='f') | Some('A'..='F')),
+            other => unimplemented!("Radix not implemented: {}", other),
+        }
+    }
+
+    // Consume a single character with the given radix.
+    fn take_number(&mut self, radix: u32) -> Option<char> {
+        let take_char = Lexer::<T>::is_digit_of_radix(self.window[0], radix);
+
+        if take_char {
+            Some(self.next_char()?)
+        } else {
+            None
+        }
+    }
+
+    // Consume a sequence of numbers with the given radix,
+    // the digits can be decorated with underscores
+    // like this: '1_2_3_4' == '1234'
+    fn radix_run(&mut self, radix: u32) -> String {
+        let mut value_text = String::new();
+
+        loop {
+            if let Some(c) = self.take_number(radix) {
+                value_text.push(c);
+            } else if self.window[0] == Some('_')
+                && Lexer::<T>::is_digit_of_radix(self.window[1], radix)
+            {
+                self.next_char();
+            } else {
+                break;
+            }
+        }
+        value_text
+    }
+
+    fn consume_number(&mut self) -> LexResult {
+        let start_pos = self.pos();
+
+        let mut value_text = self.radix_run(10);
+        if self.window[0] == Some('.') {
+            // take '.' in 123.456
+            value_text.push(self.next_char().unwrap());
+            value_text.push_str(&self.radix_run(10));
+            let end_pos = self.pos();
+            Ok(Spanned {
+                token: Token::Number { num: value_text },
+                start_loc: start_pos,
+                end_loc: end_pos,
+            })
+        } else {
+            let end_pos = self.pos();
+            Ok(Spanned {
+                token: Token::Number { num: value_text },
+                start_loc: start_pos,
+                end_loc: end_pos,
+            })
+        }
     }
 
     fn consume_single_char(&mut self, token: Token) {
@@ -627,5 +778,32 @@ actor sample_actor_with_method:
                 Token::Dedent,
             ]
         )
+    }
+
+    #[test]
+    fn test_number_lex() {
+        let source = "12345 9.123 0.1234000 -123.4 -99";
+        assert_eq!(
+            lex_source(source),
+            vec![
+                Token::Number {
+                    num: "12345".to_string()
+                },
+                Token::Number {
+                    num: "9.123".to_string()
+                },
+                Token::Number {
+                    num: "0.1234000".to_string()
+                },
+                Token::Minus,
+                Token::Number {
+                    num: "123.4".to_string()
+                },
+                Token::Minus,
+                Token::Number {
+                    num: "99".to_string()
+                }
+            ]
+        );
     }
 }
