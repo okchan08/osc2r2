@@ -703,6 +703,8 @@ where
 mod tests {
     use std::str::Chars;
 
+    use bevy::a11y::AccessibilityNode;
+
     use super::*;
 
     pub fn lex_source(source: &str) -> Vec<Token> {
@@ -803,6 +805,103 @@ actor sample_actor_with_method:
                 Token::Number {
                     num: "99".to_string()
                 }
+            ]
+        );
+    }
+
+    #[test]
+    fn test_long_input() {
+        let source = "
+struct road_info:
+    road_id: int
+    lane_id: int
+    s: float
+
+actor my_car:
+    var road_info: road_info
+    var speed: float
+";
+        let result = lex_source(source);
+        assert_eq!(
+            result,
+            vec![
+                Token::Struct,
+                Token::Identifier {
+                    identifier: "road_info".to_string()
+                },
+                Token::Colon,
+                Token::Newline,
+                Token::Indent,
+                Token::Identifier {
+                    identifier: "road_id".to_string()
+                },
+                Token::Colon,
+                Token::Int,
+                Token::Newline,
+                Token::Identifier {
+                    identifier: "lane_id".to_string()
+                },
+                Token::Colon,
+                Token::Int,
+                Token::Newline,
+                Token::Identifier {
+                    identifier: "s".to_string()
+                },
+                Token::Colon,
+                Token::Float,
+                Token::Newline,
+                Token::Dedent,
+                Token::Actor,
+                Token::Identifier {
+                    identifier: "my_car".to_string()
+                },
+                Token::Colon,
+                Token::Newline,
+                Token::Indent,
+                Token::Var,
+                Token::Identifier {
+                    identifier: "road_info".to_string()
+                },
+                Token::Colon,
+                Token::Identifier {
+                    identifier: "road_info".to_string()
+                },
+                Token::Newline,
+                Token::Var,
+                Token::Identifier {
+                    identifier: "speed".to_string()
+                },
+                Token::Colon,
+                Token::Float,
+                Token::Newline,
+                Token::Dedent,
+            ]
+        )
+    }
+
+    #[test]
+    fn test_ignore_comment() {
+        let source = "
+struct simple_struct:
+    member1: int  # ignore comment
+";
+        let result = lex_source(source);
+        assert_eq!(
+            result,
+            vec![
+                Token::Struct,
+                Token::Identifier {
+                    identifier: "simple_struct".to_string()
+                },
+                Token::Colon,
+                Token::Newline,
+                Token::Indent,
+                Token::Identifier {
+                    identifier: "member1".to_string()
+                },
+                Token::Colon,
+                Token::Int,
+                Token::Dedent
             ]
         );
     }
