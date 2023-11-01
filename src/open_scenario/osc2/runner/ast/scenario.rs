@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use crate::open_scenario::osc2::runner::lex::token::Token;
 
-use super::{actor::Actor, errors::ParseError, parser::Spans};
+use super::{actor::Actor, errors::ParseError, osc_struct::Struct, parser::Spans};
 
 #[derive(Debug, Default)]
 pub struct Scenario {
@@ -20,10 +20,9 @@ enum OscDeclaration {
     #[default]
     Unit,
     Enum,
-    Struct,
+    Struct(Struct),
     Actor(Actor),
     Action,
-    Scenario,
     Modifier,
     TypeExtension,
     GlobalParameter,
@@ -43,7 +42,13 @@ impl Scenario {
                 }
                 Token::Newline => {
                     // skip empty line
-                    println!("skip empty line")
+                }
+                Token::Struct => {
+                    scenario
+                        .osc_declarations
+                        .push(OscDeclaration::Struct(Struct::parse_struct(
+                            &mut span_iter,
+                        )?))
                 }
                 _ => {
                     panic!("unexpected or unsupported token {} found", span.token)

@@ -7,6 +7,7 @@ use crate::open_scenario::osc2::runner::lex::token::Token;
 use super::constraint::Constraint;
 use super::errors::{ParseError, ParseErrorType};
 use super::event::Event;
+use super::field::Field;
 use super::identifier::Identifier;
 use super::method::Method;
 use super::parser::SpanIterator;
@@ -20,18 +21,19 @@ pub(super) struct Actor {
     member_declarations: Vec<ActorMemberDeclaration>,
 }
 
+#[derive(Debug, Default)]
 struct ActorInheritanceDeclaration {
     parent_actor_name: Identifier,
     initial_field_values: HashMap<Identifier, Value>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 enum ActorMemberDeclaration {
     Event(Event),
-    #[default]
-    Field,
+    Field(Field),
     Constraint(Constraint),
     Method(Method),
+    #[default]
     Coverage,
 }
 
@@ -39,7 +41,7 @@ impl Actor {
     pub fn parse_actor_declaration(span_iter: &mut SpanIterator) -> Result<Actor, ParseError> {
         let mut actor = Actor::default();
 
-        let actor_name = Self::parse_actor_name(span_iter)?;
+        let actor_name = Self::parse_identifier(span_iter)?;
         actor.name = actor_name;
         if let Some(actor_inheritance_decl) = Self::parse_actor_inheritance(span_iter)? {
             actor.parent_actor = Some(actor_inheritance_decl.parent_actor_name);
@@ -116,7 +118,7 @@ impl Actor {
         Ok(actor)
     }
 
-    fn parse_actor_name(span_iter: &mut SpanIterator) -> Result<Identifier, ParseError> {
+    fn parse_identifier(span_iter: &mut SpanIterator) -> Result<Identifier, ParseError> {
         if let Some(span) = span_iter.next() {
             match &span.token {
                 Token::Identifier { identifier } => Ok(Identifier {
@@ -195,13 +197,11 @@ impl Actor {
                     Token::Event => members.push(ActorMemberDeclaration::Event(
                         Event::parse_event(span_iter)?,
                     )),
-                    Token::Identifier { .. } => {
-                        // parameter decl.
-                        todo!("parameter declaration in actor is not supported");
-                    }
-                    Token::Var => {
-                        // variable decl.
-                        todo!("variable declaration in actor is not supported");
+                    Token::Identifier { .. } | Token::Var => {
+                        // field decl.
+                        for field in Field::parse_fields(span_iter)?.into_iter() {
+                            members.push(ActorMemberDeclaration::Field(field));
+                        }
                     }
                     Token::Keep | Token::RemoveDefault => {
                         // constraint decl
@@ -241,5 +241,79 @@ impl Actor {
                 return Ok(members);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::open_scenario::osc2::runner::{
+        ast::{field::Parameter, parser::Spans, types::Type},
+        lex::lexer::make_tokenizer,
+    };
+
+    pub fn lex_source(source: &str) -> Spans {
+        let lexer = make_tokenizer(source, "".to_string());
+        Spans::new(lexer.map(|x| x.unwrap()).collect())
+    }
+
+    #[test]
+    fn test_actor_parse() {
+        let source = "
+actor child:
+    field1: int
+    field2: int
+    field3: list of bool
+";
+        let spans = lex_source(source);
+        let mut span_iter = spans.iter();
+        span_iter.next(); // consume actor token
+        let result = Actor::parse_actor_declaration(&mut span_iter).unwrap();
+
+        assert_eq!(
+            result.name,
+            Identifier {
+                name: "child".to_string()
+            }
+        );
+        assert_eq!(result.parent_actor, None);
+
+        assert_eq!(result.initial_field_values.len(), 0);
+
+        assert_eq!(result.member_declarations.len(), 3);
+
+        assert_eq!(
+            result.member_declarations[0],
+            ActorMemberDeclaration::Field(Field::Parameter(Parameter {
+                name: Identifier {
+                    name: "field1".to_string()
+                },
+                field_type: Type::Int,
+                default_value: None,
+                constraints: vec![],
+            }))
+        );
+        assert_eq!(
+            result.member_declarations[1],
+            ActorMemberDeclaration::Field(Field::Parameter(Parameter {
+                name: Identifier {
+                    name: "field2".to_string()
+                },
+                field_type: Type::Int,
+                default_value: None,
+                constraints: vec![],
+            }))
+        );
+        assert_eq!(
+            result.member_declarations[2],
+            ActorMemberDeclaration::Field(Field::Parameter(Parameter {
+                name: Identifier {
+                    name: "field3".to_string()
+                },
+                field_type: Type::List(Box::new(Type::Bool)),
+                default_value: None,
+                constraints: vec![],
+            }))
+        );
     }
 }

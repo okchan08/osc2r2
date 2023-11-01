@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use super::{errors::ParseError, parser::SpanIterator};
 
-#[derive(Debug, Default)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Default)]
 pub(super) enum Constraint {
     #[default]
     Keep,

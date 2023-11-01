@@ -6,6 +6,7 @@ pub fn parse_tokens(spans: Vec<Spanned>) -> Result<Scenario, ParseError> {
     Scenario::parse_scenario(Spans::new(spans))
 }
 
+#[derive(Debug)]
 pub struct Spans {
     source: Vec<Spanned>,
 }

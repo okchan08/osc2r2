@@ -1,6 +1,6 @@
 use super::{errors::ParseError, parser::SpanIterator};
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub(super) struct Event {}
 
 impl Event {

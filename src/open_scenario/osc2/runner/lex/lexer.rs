@@ -703,8 +703,6 @@ where
 mod tests {
     use std::str::Chars;
 
-    use bevy::a11y::AccessibilityNode;
-
     use super::*;
 
     pub fn lex_source(source: &str) -> Vec<Token> {

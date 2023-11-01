@@ -38,13 +38,15 @@ impl ParseError {
 #[derive(Debug, Default)]
 pub enum ParseErrorType {
     ActorDeclarationError,
+    #[default]
     EndOfFile,
     UnexpectedToken {
         found: Token,
         expected: Vec<Token>,
     },
-    #[default]
-    Unsupported,
+    Unsupported {
+        found: Token,
+    },
 }
 
 impl fmt::Display for ParseErrorType {
@@ -65,7 +67,7 @@ impl fmt::Display for ParseErrorType {
                 )
                 .as_str(),
             ),
-            Unsupported => f.write_str("not supported yet."),
+            Unsupported { found } => f.write_str(format!("{} not supported yet.", found).as_str()),
         }
     }
 }

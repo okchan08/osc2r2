@@ -52,6 +52,7 @@ pub(super) static KEYWORD_MAP: phf::Map<&'static str, Token> = phf_map! {
   "record" =>  Token::Record,
   "remove_default" =>  Token::RemoveDefault,
   "rize" =>  Token::Rise,
+  "sample" => Token::Sample,
   "scenario" =>  Token::Scenario,
   "serial" =>  Token::Serial,
   "SI" =>  Token::SI,
