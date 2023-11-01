@@ -51,7 +51,8 @@ impl Scenario {
                         )?))
                 }
                 _ => {
-                    panic!("unexpected or unsupported token {} found", span.token)
+                    break;
+                    //panic!("unexpected or unsupported token {} found", span.token)
                 }
             }
         }

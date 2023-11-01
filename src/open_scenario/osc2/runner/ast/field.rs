@@ -100,7 +100,7 @@ impl Parameter {
         let mut constraints = vec![];
         let defined_type = Type::parse_type(span_iter)?;
         loop {
-            match span_iter.next() {
+            match span_iter.peek(0) {
                 Some(Spanned {
                     token: Token::Equal,
                     start_loc,
@@ -118,8 +118,27 @@ impl Parameter {
                 }) => {
                     constraints.push(Constraint::parse_constraint(span_iter)?);
                 }
-                _ => {
+                Some(Spanned {
+                    token: Token::Newline,
+                    ..
+                }) => {
+                    span_iter.next();
                     break;
+                }
+                Some(span) => {
+                    return Err(ParseError {
+                        error: ParseErrorType::UnexpectedToken {
+                            found: span.token.clone(),
+                            expected: vec![Token::Equal, Token::Sample, Token::Newline],
+                        },
+                        token_loc: Some(span.start_loc.clone()),
+                    });
+                }
+                None => {
+                    return Err(ParseError {
+                        error: ParseErrorType::EndOfFile,
+                        token_loc: None,
+                    });
                 }
             }
         }
@@ -147,10 +166,12 @@ pub(super) struct Variable {
 impl Variable {
     pub fn parse_variables(span_iter: &mut SpanIterator) -> Result<Vec<Variable>, ParseError> {
         // expects span_iter to point Token::Var token on called.
-        match span_iter.next() {
+        match span_iter.peek(0) {
             Some(Spanned {
                 token: Token::Var, ..
-            }) => {}
+            }) => {
+                span_iter.next();
+            }
             Some(Spanned {
                 token, start_loc, ..
             }) => {
@@ -172,7 +193,7 @@ impl Variable {
         let names = Field::parse_field_name_list(span_iter)?;
         let defined_type = Type::parse_type(span_iter)?;
         loop {
-            match span_iter.next() {
+            match span_iter.peek(0) {
                 Some(Spanned {
                     token: Token::Equal,
                     start_loc,
@@ -190,8 +211,27 @@ impl Variable {
                         token_loc: Some(*start_loc),
                     });
                 }
-                _ => {
+                Some(Spanned {
+                    token: Token::Newline,
+                    ..
+                }) => {
+                    span_iter.next();
                     break;
+                }
+                Some(span) => {
+                    return Err(ParseError {
+                        error: ParseErrorType::UnexpectedToken {
+                            found: span.token.clone(),
+                            expected: vec![Token::Equal, Token::Sample, Token::Newline],
+                        },
+                        token_loc: Some(span.start_loc.clone()),
+                    });
+                }
+                None => {
+                    return Err(ParseError {
+                        error: ParseErrorType::EndOfFile,
+                        token_loc: None,
+                    });
                 }
             }
         }

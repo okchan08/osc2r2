@@ -221,6 +221,7 @@ impl Actor {
                     }
                     Token::Dedent => {
                         // end of decl.
+                        span_iter.next();
                         return Ok(members);
                     }
                     _ => {
