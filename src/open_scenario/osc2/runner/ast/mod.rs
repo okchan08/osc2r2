@@ -1,4 +1,6 @@
+mod action;
 mod actor;
+mod behavior;
 mod constraint;
 mod errors;
 mod event;
@@ -9,5 +11,6 @@ mod method;
 mod osc_struct;
 pub mod parser;
 mod scenario;
+mod tests;
 mod types;
 mod value;

@@ -75,10 +75,7 @@ impl Field {
                     break;
                 }
                 _ => {
-                    return Err(ParseError {
-                        error: ParseErrorType::EndOfFile,
-                        token_loc: None,
-                    });
+                    break;
                 }
             }
         }
@@ -249,14 +246,9 @@ impl Variable {
 
 #[cfg(test)]
 mod tests {
+    use crate::open_scenario::osc2::runner::ast::tests::util::lex_source;
+
     use super::*;
-
-    use crate::open_scenario::osc2::runner::{ast::parser::Spans, lex::lexer::make_tokenizer};
-
-    pub fn lex_source(source: &str) -> Spans {
-        let lexer = make_tokenizer(source, "".to_string());
-        Spans::new(lexer.map(|x| x.unwrap()).collect())
-    }
 
     #[test]
     pub fn test_field_parser() {

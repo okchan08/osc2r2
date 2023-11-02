@@ -51,8 +51,9 @@ impl Actor {
         if let Some(span) = span_iter.peek(0) {
             match span.token {
                 Token::Newline => {
-                    // consume empty line.
+                    // end of actor declaration
                     span_iter.next();
+                    return Ok(actor);
                 }
                 Token::Colon => {
                     // member declarations found.
@@ -248,15 +249,9 @@ impl Actor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::open_scenario::osc2::runner::{
-        ast::{field::Parameter, parser::Spans, types::Type},
-        lex::lexer::make_tokenizer,
+    use crate::open_scenario::osc2::runner::ast::{
+        field::Parameter, tests::util::lex_source, types::Type,
     };
-
-    pub fn lex_source(source: &str) -> Spans {
-        let lexer = make_tokenizer(source, "".to_string());
-        Spans::new(lexer.map(|x| x.unwrap()).collect())
-    }
 
     #[test]
     fn test_actor_parse() {

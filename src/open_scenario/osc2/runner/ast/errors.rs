@@ -38,6 +38,8 @@ impl ParseError {
 #[derive(Debug, Default)]
 pub enum ParseErrorType {
     ActorDeclarationError,
+    ActionDeclarationError,
+    ScenarioDeclarationError,
     #[default]
     EndOfFile,
     UnexpectedToken {
@@ -54,6 +56,8 @@ impl fmt::Display for ParseErrorType {
         use ParseErrorType::*;
         match self {
             ActorDeclarationError => f.write_str("actor declaration error"),
+            ActionDeclarationError => f.write_str("action declaration error"),
+            ScenarioDeclarationError => f.write_str("scenario declaration error"),
             EndOfFile => f.write_str("unexpected EOF"),
             UnexpectedToken { found, expected } => f.write_str(
                 format!(

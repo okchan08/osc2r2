@@ -1,9 +1,9 @@
 use crate::open_scenario::osc2::runner::lex::lexer::Spanned;
 
-use super::{errors::ParseError, scenario::Scenario};
+use super::{errors::ParseError, scenario::OscFile};
 
-pub fn parse_tokens(spans: Vec<Spanned>) -> Result<Scenario, ParseError> {
-    Scenario::parse_scenario(Spans::new(spans))
+pub fn parse_tokens(spans: Vec<Spanned>) -> Result<OscFile, ParseError> {
+    OscFile::parse_scenario_file(Spans::new(spans))
 }
 
 #[derive(Debug)]
