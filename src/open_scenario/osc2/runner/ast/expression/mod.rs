@@ -6,17 +6,17 @@ use self::implication::Implication;
 
 use super::{errors::ParseError, parser::SpanIterator, utils};
 
-mod conjunction;
-mod disjunction;
-mod factor;
-mod implication;
-mod inversion;
-mod postfix;
-mod primary;
-mod relation;
-mod sum;
-mod term;
-mod value;
+pub(super) mod conjunction;
+pub(super) mod disjunction;
+pub(super) mod factor;
+pub(super) mod implication;
+pub(super) mod inversion;
+pub(super) mod postfix;
+pub(super) mod primary;
+pub(super) mod relation;
+pub(super) mod sum;
+pub(super) mod term;
+pub(super) mod value;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub enum Expression {

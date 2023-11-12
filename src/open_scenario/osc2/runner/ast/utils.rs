@@ -66,6 +66,16 @@ pub(super) fn parse_identifier(span_iter: &mut SpanIterator) -> Result<Identifie
     }
 }
 
+pub(super) fn peek_next_is_identifier(span_iter: &SpanIterator) -> bool {
+    let Some(span) = span_iter.peek(0) else {
+        return false;
+    };
+    match span.token {
+        Token::Identifier { identifier: _ } => true,
+        _ => false,
+    }
+}
+
 pub(super) fn match_peek_next(span_iter: &SpanIterator, expect: Token) -> bool {
     let Some(span) = span_iter.peek(0) else {
         return false;

@@ -1,5 +1,3 @@
-use std::ascii::AsciiExt;
-
 use crate::open_scenario::osc2::runner::lex::{lexer::Spanned, token::Token};
 
 use super::{

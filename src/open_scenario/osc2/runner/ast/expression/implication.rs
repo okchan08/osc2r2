@@ -7,7 +7,7 @@ use super::{disjunction::Disjunction, EvaluationError, ExpressionValue};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct Implication {
-    disjunctions: Vec<Disjunction>,
+    pub disjunctions: Vec<Disjunction>,
 }
 
 impl Implication {
