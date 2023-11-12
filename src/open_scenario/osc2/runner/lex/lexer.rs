@@ -1,6 +1,8 @@
 use core::ops::Index;
 use std::{cmp::Ordering, slice::SliceIndex};
 
+use bevy::utils::tracing::Span;
+
 use super::consts::KEYWORD_MAP;
 
 use super::{
@@ -597,6 +599,60 @@ where
             }
             '+' => {
                 self.consume_single_char(Token::Plus);
+            }
+            '!' => {
+                let start_pos = self.pos();
+                self.next_char();
+                match self.window[0] {
+                    Some('=') => {
+                        self.next_char();
+                        let end_pos = self.pos();
+                        self.emit(Spanned {
+                            token: Token::NotEq,
+                            start_loc: start_pos,
+                            end_loc: end_pos,
+                        })
+                    }
+                    Some(_) => self.emit(Spanned {
+                        token: Token::Exclamation,
+                        start_loc: start_pos,
+                        end_loc: start_pos,
+                    }),
+                    None => {
+                        return Err(LexicalError {
+                            error: LexicalErrorType::EOF,
+                            location: start_pos,
+                            filename: self.filename.to_owned(),
+                        });
+                    }
+                }
+            }
+            '<' => {
+                let start_pos = self.pos();
+                self.next_char();
+                match self.window[0] {
+                    Some('=') => {
+                        self.next_char();
+                        let end_pos = self.pos();
+                        self.emit(Spanned {
+                            token: Token::LessEq,
+                            start_loc: start_pos,
+                            end_loc: end_pos,
+                        });
+                    }
+                    Some(_) => self.emit(Spanned {
+                        token: Token::Less,
+                        start_loc: start_pos,
+                        end_loc: start_pos,
+                    }),
+                    None => {
+                        return Err(LexicalError {
+                            error: LexicalErrorType::EOF,
+                            location: start_pos,
+                            filename: self.filename.to_owned(),
+                        });
+                    }
+                }
             }
             _ => {
                 return Err(LexicalError {

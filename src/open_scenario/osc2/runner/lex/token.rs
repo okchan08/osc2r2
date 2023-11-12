@@ -26,12 +26,13 @@ pub enum Token {
     Lsqb,            // [
     Rsqb,            // ]
     Question,        // ?
+    Exclamation,     // !
     REqArrow,        // =>
     And,             // and
     Or,              // or
     Not,             // not
     DoubleEq,        // ==
-    NotEq,           //  !=
+    NotEq,           // !=
     Less,            // <
     LessEq,          // <=
     Greater,         // >
@@ -127,6 +128,7 @@ impl fmt::Display for Token {
             Lsqb => f.write_str("["),
             Rsqb => f.write_str("]"),
             Question => f.write_str("?"),
+            Exclamation => f.write_str("!"),
             REqArrow => f.write_str("=>"),
             And => f.write_str("and"),
             Or => f.write_str("or"),

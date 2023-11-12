@@ -13,8 +13,8 @@ use super::{term::Term, EvaluationError, ExpressionValue};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct Additivation {
-    operation: AdditiveOp,
-    right_term: Box<Term>,
+    pub operation: AdditiveOp,
+    pub right_term: Box<Term>,
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]

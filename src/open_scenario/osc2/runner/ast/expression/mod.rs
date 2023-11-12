@@ -1,12 +1,13 @@
 use ordered_float::OrderedFloat;
 
-use self::sum::Sum;
+use self::{relation::Relation, sum::Sum};
 
 use super::{errors::ParseError, parser::SpanIterator};
 
 mod factor;
 mod postfix;
 mod primary;
+mod relation;
 mod sum;
 mod term;
 mod value;
@@ -76,28 +77,4 @@ pub struct Conjunction {
 pub enum Inversion {
     Not(Box<Inversion>),
     Relation(Relation),
-}
-
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
-pub enum Relation {
-    Sum(Box<Sum>),
-    BinaryRelation(BinaryRelation),
-}
-
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
-pub struct BinaryRelation {
-    sum: Box<Sum>,
-    operator: BinaryRelationOp,
-    right_sum: Box<Sum>,
-}
-
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
-pub enum BinaryRelationOp {
-    Eq,    // ==
-    NotEq, // !=
-    Gt,    // <
-    Ge,    // <=
-    Lt,    // >
-    Le,    // >=
-    In,    // in
 }
