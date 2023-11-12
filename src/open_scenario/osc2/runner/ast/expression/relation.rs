@@ -11,8 +11,8 @@ use super::{sum::Sum, EvaluationError, ExpressionValue};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct Relation {
-    left_sum: Sum,
-    binary_relation: Option<BinaryRelation>,
+    pub left_sum: Sum,
+    pub binary_relation: Option<BinaryRelation>,
 }
 
 impl Relation {
@@ -43,9 +43,9 @@ impl Relation {
         }
     }
 
-    pub fn eval(self) -> Result<ExpressionValue, EvaluationError> {
+    pub fn eval(&self) -> Result<ExpressionValue, EvaluationError> {
         let left_res = self.left_sum.eval()?;
-        match self.binary_relation {
+        match &self.binary_relation {
             Some(bo) => {
                 let right_res = bo.right_sum.eval()?;
                 bo.operator.eval(left_res, right_res)
@@ -57,8 +57,8 @@ impl Relation {
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct BinaryRelation {
-    operator: BinaryRelationOp,
-    right_sum: Sum,
+    pub operator: BinaryRelationOp,
+    pub right_sum: Sum,
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]

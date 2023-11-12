@@ -30,7 +30,7 @@ impl Factor {
         }
     }
 
-    pub fn eval(self) -> Result<ExpressionValue, EvaluationError> {
+    pub fn eval(&self) -> Result<ExpressionValue, EvaluationError> {
         use Factor::*;
         match self {
             PostfixExpression(exp) => exp.eval(),

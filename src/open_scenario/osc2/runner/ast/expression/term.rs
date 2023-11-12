@@ -98,11 +98,11 @@ impl Term {
         Ok(term)
     }
 
-    pub fn eval(self) -> Result<ExpressionValue, EvaluationError> {
+    pub fn eval(&self) -> Result<ExpressionValue, EvaluationError> {
         use ExpressionValue::*;
         use MultiplicativeOperation::*;
         let mut result = self.factor.eval()?;
-        for multiplication in self.multiplications {
+        for multiplication in &self.multiplications {
             match (result, multiplication.right_factor.eval()?) {
                 (Int(left), Int(right)) => match multiplication.operation {
                     Div => {

@@ -60,11 +60,11 @@ impl Sum {
         Ok(sum)
     }
 
-    pub fn eval(self) -> Result<ExpressionValue, EvaluationError> {
+    pub fn eval(&self) -> Result<ExpressionValue, EvaluationError> {
         use AdditiveOp::*;
         use ExpressionValue::*;
         let mut result = self.term.eval()?;
-        for additivation in self.additivations {
+        for additivation in &self.additivations {
             match (result, additivation.right_term.eval()?) {
                 (Int(left), Int(right)) => match additivation.operation {
                     Plus => {

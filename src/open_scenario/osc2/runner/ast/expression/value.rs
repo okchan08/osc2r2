@@ -101,12 +101,12 @@ impl ValueExpression {
         Ok(ret)
     }
 
-    pub fn eval(self) -> Result<ExpressionValue, EvaluationError> {
+    pub fn eval(&self) -> Result<ExpressionValue, EvaluationError> {
         match self {
-            ValueExpression::Bool(val) => Ok(ExpressionValue::Bool(val)),
-            ValueExpression::Integer(val) => Ok(ExpressionValue::Int(val)),
-            ValueExpression::Float(val) => Ok(ExpressionValue::Float(val)),
-            ValueExpression::String(val) => Ok(ExpressionValue::String(val)),
+            ValueExpression::Bool(val) => Ok(ExpressionValue::Bool(*val)),
+            ValueExpression::Integer(val) => Ok(ExpressionValue::Int(*val)),
+            ValueExpression::Float(val) => Ok(ExpressionValue::Float(*val)),
+            ValueExpression::String(val) => Ok(ExpressionValue::String(val.to_owned())),
         }
     }
 }

@@ -52,7 +52,7 @@ impl PrimaryExpression {
         }
     }
 
-    pub fn eval(self) -> Result<ExpressionValue, EvaluationError> {
+    pub fn eval(&self) -> Result<ExpressionValue, EvaluationError> {
         match self {
             PrimaryExpression::Value(val) => val.eval(),
             PrimaryExpression::Identifier(_) => todo!(),

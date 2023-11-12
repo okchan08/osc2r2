@@ -115,7 +115,7 @@ impl PostfixExpression {
         }
     }
 
-    pub fn eval(self) -> Result<ExpressionValue, EvaluationError> {
+    pub fn eval(&self) -> Result<ExpressionValue, EvaluationError> {
         match self {
             PostfixExpression::FieldAccess {
                 postfix: _,

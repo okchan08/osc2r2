@@ -1,10 +1,12 @@
 use ordered_float::OrderedFloat;
 
-use self::{relation::Relation, sum::Sum};
+use self::{conjunction::Conjunction, inversion::Inversion, relation::Relation, sum::Sum};
 
 use super::{errors::ParseError, parser::SpanIterator};
 
+mod conjunction;
 mod factor;
+mod inversion;
 mod postfix;
 mod primary;
 mod relation;
@@ -23,7 +25,7 @@ impl Expression {
         todo!()
     }
 
-    pub fn eval(self) -> Result<ExpressionValue, EvaluationError> {
+    pub fn eval(&self) -> Result<ExpressionValue, EvaluationError> {
         todo!()
     }
 }
@@ -41,6 +43,13 @@ impl ExpressionValue {
         use ExpressionValue::*;
         match self {
             Float(_) | Int(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_boolean(&self) -> bool {
+        match self {
+            ExpressionValue::Bool(_) => true,
             _ => false,
         }
     }
@@ -66,15 +75,4 @@ pub struct Implication {
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct Disjunction {
     conjunctions: Vec<Conjunction>,
-}
-
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
-pub struct Conjunction {
-    inversions: Vec<Inversion>,
-}
-
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
-pub enum Inversion {
-    Not(Box<Inversion>),
-    Relation(Relation),
 }
