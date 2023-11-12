@@ -7,7 +7,7 @@ use super::{inversion::Inversion, EvaluationError, ExpressionValue};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct Conjunction {
-    inversions: Vec<Inversion>,
+    pub inversions: Vec<Inversion>,
 }
 
 impl Conjunction {

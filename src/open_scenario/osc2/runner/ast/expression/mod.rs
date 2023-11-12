@@ -1,10 +1,11 @@
 use ordered_float::OrderedFloat;
 
-use self::{conjunction::Conjunction, inversion::Inversion, relation::Relation, sum::Sum};
+use self::disjunction::Disjunction;
 
 use super::{errors::ParseError, parser::SpanIterator};
 
 mod conjunction;
+mod disjunction;
 mod factor;
 mod inversion;
 mod postfix;
@@ -70,9 +71,4 @@ pub struct TernaryOpExpression {
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct Implication {
     disjunctions: Vec<Disjunction>,
-}
-
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
-pub struct Disjunction {
-    conjunctions: Vec<Conjunction>,
 }
