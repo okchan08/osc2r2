@@ -30,13 +30,7 @@ impl Inversion {
                     _ => Err(EvaluationError::InvalidOperation),
                 }
             }
-            Inversion::Relation(relation) => {
-                let result = relation.eval()?;
-                match result {
-                    ExpressionValue::Bool(val) => Ok(ExpressionValue::Bool(val)),
-                    _ => Err(EvaluationError::InvalidOperation),
-                }
-            }
+            Inversion::Relation(relation) => relation.eval(),
         }
     }
 }

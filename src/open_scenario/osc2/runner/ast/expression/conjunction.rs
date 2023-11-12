@@ -31,8 +31,9 @@ impl Conjunction {
     }
 
     pub fn eval(&self) -> Result<ExpressionValue, EvaluationError> {
-        if self.inversions.len() == 0 {
-            return Ok(ExpressionValue::Bool(true));
+        assert!(self.inversions.len() > 0);
+        if self.inversions.len() == 1 {
+            return self.inversions[0].eval();
         }
 
         let mut res = ExpressionValue::Bool(true);

@@ -8,10 +8,9 @@ use crate::open_scenario::osc2::runner::{
 
 use super::{errors::ParseError, expression::Expression, parser::SpanIterator};
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Default)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub(super) enum Constraint {
-    #[default]
-    Keep,
+    Keep(KeepConstraint),
     RemoveDefault,
 }
 
@@ -61,6 +60,17 @@ impl Constraint {
     fn parse_keep_constraint(span_iter: &mut SpanIterator) -> Result<Constraint, ParseError> {
         utils::consume_one_token(span_iter, Token::Keep)?;
         utils::consume_one_token(span_iter, Token::Lpar)?;
-        todo!()
+        let constraint_qualifier = if utils::match_peek_next(span_iter, Token::Default) {
+            ConstraintQualifier::Default
+        } else {
+            ConstraintQualifier::Hard
+        };
+        let expression = Expression::parse_expression(span_iter)?;
+        utils::consume_one_token(span_iter, Token::Rpar)?;
+        utils::consume_one_token(span_iter, Token::Newline)?;
+        Ok(Constraint::Keep(KeepConstraint {
+            constraint_qualifier,
+            expression,
+        }))
     }
 }

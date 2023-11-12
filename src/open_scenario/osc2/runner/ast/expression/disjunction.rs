@@ -33,11 +33,12 @@ impl Disjunction {
     }
 
     pub fn eval(&self) -> Result<ExpressionValue, EvaluationError> {
-        if self.conjunctions.len() == 0 {
-            return Ok(ExpressionValue::Bool(true));
+        assert!(self.conjunctions.len() > 0);
+        if self.conjunctions.len() == 1 {
+            return self.conjunctions[0].eval();
         }
 
-        let mut res = ExpressionValue::Bool(true);
+        let mut res = ExpressionValue::Bool(false);
         for inv in self.conjunctions.iter() {
             match (res, inv.eval()?) {
                 (ExpressionValue::Bool(curr), ExpressionValue::Bool(val)) => {
@@ -74,11 +75,98 @@ mod tests {
             String,
             Result<Disjunction, ()>,
             Result<ExpressionValue, EvaluationError>,
-        )> = vec![(
-            "1 + 1 == 2 or false and true".to_string(),
-            Ok(Disjunction {
-                conjunctions: vec![
-                    Conjunction {
+        )> = vec![
+            (
+                "1 + 1 == 2 or false and true".to_string(),
+                Ok(Disjunction {
+                    conjunctions: vec![
+                        Conjunction {
+                            inversions: vec![Inversion::Relation(Relation {
+                                left_sum: Sum {
+                                    term: Term {
+                                        factor: Factor::PostfixExpression(
+                                            PostfixExpression::Primary(PrimaryExpression::Value(
+                                                ValueExpression::Integer(1),
+                                            )),
+                                        ),
+                                        multiplications: vec![],
+                                    },
+                                    additivations: vec![Additivation {
+                                        operation: AdditiveOp::Plus,
+                                        right_term: Box::new(Term {
+                                            factor: Factor::PostfixExpression(
+                                                PostfixExpression::Primary(
+                                                    PrimaryExpression::Value(
+                                                        ValueExpression::Integer(1),
+                                                    ),
+                                                ),
+                                            ),
+                                            multiplications: vec![],
+                                        }),
+                                    }],
+                                },
+                                binary_relation: Some(BinaryRelation {
+                                    operator: BinaryRelationOp::Eq,
+                                    right_sum: Sum {
+                                        term: Term {
+                                            factor: Factor::PostfixExpression(
+                                                PostfixExpression::Primary(
+                                                    PrimaryExpression::Value(
+                                                        ValueExpression::Integer(2),
+                                                    ),
+                                                ),
+                                            ),
+                                            multiplications: vec![],
+                                        },
+                                        additivations: vec![],
+                                    },
+                                }),
+                            })],
+                        },
+                        Conjunction {
+                            inversions: vec![
+                                Inversion::Relation(Relation {
+                                    left_sum: Sum {
+                                        term: Term {
+                                            factor: Factor::PostfixExpression(
+                                                PostfixExpression::Primary(
+                                                    PrimaryExpression::Value(
+                                                        ValueExpression::Bool(false),
+                                                    ),
+                                                ),
+                                            ),
+                                            multiplications: vec![],
+                                        },
+                                        additivations: vec![],
+                                    },
+                                    binary_relation: None,
+                                }),
+                                Inversion::Relation(Relation {
+                                    left_sum: Sum {
+                                        term: Term {
+                                            factor: Factor::PostfixExpression(
+                                                PostfixExpression::Primary(
+                                                    PrimaryExpression::Value(
+                                                        ValueExpression::Bool(true),
+                                                    ),
+                                                ),
+                                            ),
+                                            multiplications: vec![],
+                                        },
+                                        additivations: vec![],
+                                    },
+                                    binary_relation: None,
+                                }),
+                            ],
+                        },
+                    ],
+                }),
+                Ok(ExpressionValue::Bool(true)),
+            ),
+            (
+                "1 + 2".to_string(),
+                Ok(Disjunction {
+                    conjunctions: vec![Conjunction {
                         inversions: vec![Inversion::Relation(Relation {
                             left_sum: Sum {
                                 term: Term {
@@ -92,65 +180,20 @@ mod tests {
                                     right_term: Box::new(Term {
                                         factor: Factor::PostfixExpression(
                                             PostfixExpression::Primary(PrimaryExpression::Value(
-                                                ValueExpression::Integer(1),
+                                                ValueExpression::Integer(2),
                                             )),
                                         ),
                                         multiplications: vec![],
                                     }),
                                 }],
                             },
-                            binary_relation: Some(BinaryRelation {
-                                operator: BinaryRelationOp::Eq,
-                                right_sum: Sum {
-                                    term: Term {
-                                        factor: Factor::PostfixExpression(
-                                            PostfixExpression::Primary(PrimaryExpression::Value(
-                                                ValueExpression::Integer(2),
-                                            )),
-                                        ),
-                                        multiplications: vec![],
-                                    },
-                                    additivations: vec![],
-                                },
-                            }),
+                            binary_relation: None,
                         })],
-                    },
-                    Conjunction {
-                        inversions: vec![
-                            Inversion::Relation(Relation {
-                                left_sum: Sum {
-                                    term: Term {
-                                        factor: Factor::PostfixExpression(
-                                            PostfixExpression::Primary(PrimaryExpression::Value(
-                                                ValueExpression::Bool(false),
-                                            )),
-                                        ),
-                                        multiplications: vec![],
-                                    },
-                                    additivations: vec![],
-                                },
-                                binary_relation: None,
-                            }),
-                            Inversion::Relation(Relation {
-                                left_sum: Sum {
-                                    term: Term {
-                                        factor: Factor::PostfixExpression(
-                                            PostfixExpression::Primary(PrimaryExpression::Value(
-                                                ValueExpression::Bool(true),
-                                            )),
-                                        ),
-                                        multiplications: vec![],
-                                    },
-                                    additivations: vec![],
-                                },
-                                binary_relation: None,
-                            }),
-                        ],
-                    },
-                ],
-            }),
-            Ok(ExpressionValue::Bool(true)),
-        )];
+                    }],
+                }),
+                Ok(ExpressionValue::Int(3)),
+            ),
+        ];
         for (source, expected, expected_val) in test_cases {
             let spans = lex_source(source.as_str());
             let mut span_iter = spans.iter();
