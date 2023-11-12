@@ -1,18 +1,22 @@
 #![allow(dead_code)]
 
+use bevy::utils::tracing::Span;
+
 use crate::open_scenario::osc2::runner::{
-    ast::identifier::Identifier,
+    ast::{identifier::Identifier, utils},
     lex::{lexer::Spanned, token::Token},
 };
 
 use super::{
     action::Action,
     actor::Actor,
+    behavior::{BehaviorInvocation, BehaviorSpecification},
     constraint::Constraint,
     errors::{ParseError, ParseErrorType},
     event::Event,
     field::Field,
     method::Method,
+    modifier::Modifier,
     osc_struct::Struct,
     parser::{SpanIterator, Spans},
 };
@@ -37,10 +41,10 @@ enum OscDeclaration {
     Struct(Struct),
     Actor(Actor),
     Action(Action),
-    Modifier,
+    Modifier(Modifier),
     TypeExtension,
     GlobalParameter,
-    Scenario,
+    Scenario(Scenario),
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -50,7 +54,7 @@ pub(super) enum ScenarioMemberDeclaration {
     Constraint(Constraint),
     Method(Method),
     Coverage,
-    Modifier,
+    Modifier(Modifier),
 }
 
 impl OscFile {
@@ -82,8 +86,16 @@ impl OscFile {
                             &mut span_iter,
                         )?))
                 }
+                Token::Modifier => {
+                    osc_file.osc_declarations.push(OscDeclaration::Modifier(
+                        Modifier::parse_modifier(&mut span_iter)?,
+                    ));
+                }
+                Token::Scenario => osc_file.osc_declarations.push(OscDeclaration::Scenario(
+                    Scenario::parse_scenario(&mut span_iter)?,
+                )),
                 _ => {
-                    panic!("unexpected or unsupported token {} found", span.token)
+                    panic!("unexpected or unsupported token {:?} found", span.token)
                 }
             }
         }
@@ -96,59 +108,172 @@ impl ScenarioMemberDeclaration {
         span_iter: &mut SpanIterator,
     ) -> Result<Vec<ScenarioMemberDeclaration>, ParseError> {
         let mut results = vec![];
-        loop {
-            if let Some(span) = span_iter.peek(0) {
-                match span.token {
-                    Token::Newline => {
-                        // skip empty line.
-                        span_iter.next();
+        if let Some(span) = span_iter.peek(0) {
+            match span.token {
+                Token::Newline => {
+                    // skip empty line.
+                    span_iter.next();
+                }
+                Token::Event => results.push(ScenarioMemberDeclaration::Event(Event::parse_event(
+                    span_iter,
+                )?)),
+                Token::Identifier { .. } | Token::Var => {
+                    // field decl.
+                    for field in Field::parse_fields(span_iter)?.into_iter() {
+                        results.push(ScenarioMemberDeclaration::Field(field));
                     }
-                    Token::Event => results.push(ScenarioMemberDeclaration::Event(
-                        Event::parse_event(span_iter)?,
-                    )),
-                    Token::Identifier { .. } | Token::Var => {
-                        // field decl.
-                        for field in Field::parse_fields(span_iter)?.into_iter() {
-                            results.push(ScenarioMemberDeclaration::Field(field));
+                }
+                Token::Keep | Token::RemoveDefault => {
+                    // constraint decl
+                    results.push(ScenarioMemberDeclaration::Constraint(
+                        Constraint::parse_constraint(span_iter)?,
+                    ));
+                }
+                Token::Def => {
+                    // method decl
+                    results.push(ScenarioMemberDeclaration::Method(Method::parse_method(
+                        span_iter,
+                    )?));
+                }
+                Token::Cover | Token::Record => {
+                    // coverage decl.
+                    todo!("coverage declaration in actor is not supported");
+                }
+                Token::Dedent => {
+                    // end of decl.
+                    return Ok(results);
+                }
+                _ => {}
+            }
+        } else {
+            // we expect at least one member declaration.
+            if results.is_empty() {
+                return Err(ParseError {
+                    error: ParseErrorType::ScenarioDeclarationError,
+                    token_loc: None,
+                });
+            }
+            return Ok(results);
+        }
+        Ok(results)
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Scenario {
+    associated_actor_name: Option<Identifier>,
+    name: Identifier,
+    scenarios: Vec<ScenarioMemberDeclaration>,
+    behaviors: Vec<BehaviorSpecification>,
+}
+
+impl Scenario {
+    pub fn parse_scenario(span_iter: &mut SpanIterator) -> Result<Scenario, ParseError> {
+        let (associated_actor_name, name) = utils::parse_qualified_behavior_name(span_iter)?;
+        let mut scenario = Scenario {
+            associated_actor_name,
+            name,
+            scenarios: vec![],
+            behaviors: vec![],
+        };
+        if let Some(span) = span_iter.peek(0) {
+            match span.token {
+                Token::Newline => {
+                    // end of declaration
+                    span_iter.next();
+                    return Ok(scenario);
+                }
+                Token::Colon => {
+                    // member declaration.
+                    // expect colon + newline + indent before the declaration.
+                    span_iter.next(); // consume colon
+                    let mut curr_loc = span.start_loc;
+                    if let Some(span) = span_iter.next() {
+                        // expect newline token
+                        curr_loc = span.start_loc;
+                        if span.token != Token::Newline {
+                            return Err(ParseError {
+                                error: ParseErrorType::UnexpectedToken {
+                                    found: span.token.clone(),
+                                    expected: vec![Token::Newline],
+                                },
+                                token_loc: Some(span.start_loc),
+                            });
                         }
-                    }
-                    Token::Keep | Token::RemoveDefault => {
-                        // constraint decl
-                        results.push(ScenarioMemberDeclaration::Constraint(
-                            Constraint::parse_constraint(span_iter)?,
-                        ));
-                    }
-                    Token::Def => {
-                        // method decl
-                        results.push(ScenarioMemberDeclaration::Method(Method::parse_method(
-                            span_iter,
-                        )?));
-                    }
-                    Token::Cover | Token::Record => {
-                        // coverage decl.
-                        todo!("coverage declaration in actor is not supported");
-                    }
-                    Token::Dedent => {
-                        // end of decl.
-                        return Ok(results);
-                    }
-                    _ => {
+                    } else {
                         return Err(ParseError {
-                            error: ParseErrorType::ScenarioDeclarationError,
-                            token_loc: Some(span.start_loc),
+                            error: ParseErrorType::UnexpectedToken {
+                                found: Token::EndOfFile,
+                                expected: vec![Token::Newline],
+                            },
+                            token_loc: Some(curr_loc),
                         });
                     }
+                    if let Some(span) = span_iter.next() {
+                        // expect indent token
+                        curr_loc = span.start_loc;
+                        if span.token != Token::Indent {
+                            return Err(ParseError {
+                                error: ParseErrorType::UnexpectedToken {
+                                    found: span.token.clone(),
+                                    expected: vec![Token::Indent],
+                                },
+                                token_loc: Some(span.start_loc),
+                            });
+                        }
+                    } else {
+                        return Err(ParseError {
+                            error: ParseErrorType::UnexpectedToken {
+                                found: Token::EndOfFile,
+                                expected: vec![Token::Indent],
+                            },
+                            token_loc: Some(curr_loc),
+                        });
+                    }
+                    loop {
+                        if let Some(span) = span_iter.peek(0) {
+                            match span.token {
+                                Token::Dedent => {
+                                    span_iter.next();
+                                    break;
+                                }
+                                Token::On | Token::Do => {
+                                    scenario.behaviors.push(
+                                        BehaviorSpecification::parse_behavior_specification(
+                                            span_iter,
+                                        )?,
+                                    );
+                                }
+                                _ => {
+                                    for member in ScenarioMemberDeclaration::parse_scenario_member_declarations(span_iter)? {
+                                        scenario.scenarios.push(member);
+                                  }
+                                }
+                            }
+                        } else {
+                            break;
+                        }
+                    }
                 }
-            } else {
-                // we expect at least one member declaration.
-                if results.is_empty() {
+                Token::Inherits => {
                     return Err(ParseError {
-                        error: ParseErrorType::ScenarioDeclarationError,
-                        token_loc: None,
+                        error: ParseErrorType::Unsupported {
+                            found: Token::Inherits,
+                        },
+                        token_loc: Some(span.start_loc.clone()),
                     });
                 }
-                return Ok(results);
+                _ => {
+                    return Err(ParseError {
+                        error: ParseErrorType::UnexpectedToken {
+                            found: span.token.clone(),
+                            expected: vec![Token::Newline, Token::Colon, Token::Inherits],
+                        },
+                        token_loc: Some(span.start_loc.clone()),
+                    });
+                }
             }
         }
+        Ok(scenario)
     }
 }

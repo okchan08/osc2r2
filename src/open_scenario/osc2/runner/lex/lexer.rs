@@ -583,6 +583,21 @@ where
                     }
                 }
             }
+            '"' => {
+                self.consume_single_char(Token::DoubleQuotation);
+            }
+            '*' => {
+                self.consume_single_char(Token::Star);
+            }
+            '/' => {
+                self.consume_single_char(Token::Slash);
+            }
+            '%' => {
+                self.consume_single_char(Token::Percent);
+            }
+            '+' => {
+                self.consume_single_char(Token::Plus);
+            }
             _ => {
                 return Err(LexicalError {
                     error: LexicalErrorType::NotSupportedYet,
@@ -646,14 +661,14 @@ where
             value_text.push_str(&self.radix_run(10));
             let end_pos = self.pos();
             Ok(Spanned {
-                token: Token::Number { num: value_text },
+                token: Token::FloatNumber(value_text.parse().unwrap()),
                 start_loc: start_pos,
                 end_loc: end_pos,
             })
         } else {
             let end_pos = self.pos();
             Ok(Spanned {
-                token: Token::Number { num: value_text },
+                token: Token::IntNumber(value_text.parse().unwrap()),
                 start_loc: start_pos,
                 end_loc: end_pos,
             })
@@ -786,23 +801,13 @@ actor sample_actor_with_method:
         assert_eq!(
             lex_source(source),
             vec![
-                Token::Number {
-                    num: "12345".to_string()
-                },
-                Token::Number {
-                    num: "9.123".to_string()
-                },
-                Token::Number {
-                    num: "0.1234000".to_string()
-                },
+                Token::IntNumber(12345),
+                Token::FloatNumber(9.123),
+                Token::FloatNumber(0.1234),
                 Token::Minus,
-                Token::Number {
-                    num: "123.4".to_string()
-                },
+                Token::FloatNumber(123.4),
                 Token::Minus,
-                Token::Number {
-                    num: "99".to_string()
-                }
+                Token::IntNumber(99),
             ]
         );
     }
