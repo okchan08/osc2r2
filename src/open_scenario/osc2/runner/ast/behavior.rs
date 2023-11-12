@@ -1,6 +1,7 @@
 use crate::open_scenario::osc2::runner::lex::{lexer::Spanned, token::Token};
 
 use super::{
+    argument::ArgumentList,
     constraint::Constraint,
     errors::{ParseError, ParseErrorType},
     identifier::Identifier,
@@ -278,6 +279,7 @@ pub(super) struct BehaviorInvocation {
     actor_name: Option<Identifier>,
     name: Identifier,
     with_member: Vec<BehaviorWithMember>,
+    args: Option<ArgumentList>,
 }
 
 impl BehaviorInvocation {
@@ -289,24 +291,16 @@ impl BehaviorInvocation {
             actor_name,
             name,
             with_member: vec![],
+            args: None,
         };
-
-        if let (Some(span1), Some(span2)) = (span_iter.peek(0), span_iter.peek(1)) {
-            match (&span1.token, &span2.token) {
-                (Token::Lpar, Token::Rpar) => {
-                    span_iter.next();
-                    span_iter.next();
-                }
-                _ => {
-                    println!("argument list in behavior invocation is not supported yet");
-                    return Err(ParseError {
-                        error: ParseErrorType::Unsupported {
-                            found: span1.token.clone(),
-                        },
-                        token_loc: Some(span1.start_loc.clone()),
-                    });
-                }
-            }
+        utils::consume_one_token(span_iter, Token::Lpar)?;
+        if utils::match_peek_next(span_iter, Token::Rpar) {
+            // no argument list
+            span_iter.next();
+        } else {
+            let args = ArgumentList::parse_arguments(span_iter)?;
+            behavior_invocation.args = Some(args);
+            utils::consume_one_token(span_iter, Token::Rpar)?;
         }
 
         if let Some(span) = span_iter.peek(0) {

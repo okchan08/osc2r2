@@ -22,11 +22,11 @@ impl ArgumentList {
             positional_args: vec![],
             named_args: BTreeMap::new(),
         };
-        let Some(span) = span_iter.peek(0) else {
+        let (Some(span), Some(span1)) = (span_iter.peek(0), span_iter.peek(1)) else {
           return Err(ParseError { error: ParseErrorType::EndOfFile, token_loc: None });
         };
-        match &span.token {
-            Token::Identifier { identifier: _ } => {
+        match (&span.token, &span1.token) {
+            (Token::Identifier { identifier: _ }, Token::Colon) => {
                 // The argument list contains only named arguments
                 loop {
                     let (name, expr) = ArgumentList::parse_named_arg(span_iter)?;
@@ -190,7 +190,7 @@ mod tests {
             ),
             ("1,".to_string(), Err(())),
             (
-                "1, 2, hoge : 3, fuga : 4".to_string(),
+                "value, 2, hoge : 3, fuga : my_struct".to_string(),
                 Ok(ArgumentList {
                     positional_args: vec![
                         Expression::Implication(Implication {
@@ -201,9 +201,9 @@ mod tests {
                                             term: Term {
                                                 factor: Factor::PostfixExpression(
                                                     PostfixExpression::Primary(
-                                                        PrimaryExpression::Value(
-                                                            ValueExpression::Integer(1),
-                                                        ),
+                                                        PrimaryExpression::Identifier(Identifier {
+                                                            name: "value".to_string(),
+                                                        }),
                                                     ),
                                                 ),
                                                 multiplications: vec![],
@@ -278,8 +278,10 @@ mod tests {
                                                 term: Term {
                                                     factor: Factor::PostfixExpression(
                                                         PostfixExpression::Primary(
-                                                            PrimaryExpression::Value(
-                                                                ValueExpression::Integer(4),
+                                                            PrimaryExpression::Identifier(
+                                                                Identifier {
+                                                                    name: "my_struct".to_string(),
+                                                                },
                                                             ),
                                                         ),
                                                     ),
