@@ -77,6 +77,7 @@ impl Type {
                 ..
             }) => {
                 let first_identifier = identifier.to_owned();
+                println!("here: {}", first_identifier);
                 match span_iter.peek(0) {
                     Some(Spanned {
                         token: Token::Period,
@@ -117,19 +118,22 @@ impl Type {
                     })),
                 }
             }
-            Some(spanned) => Err(ParseError {
-                error: ParseErrorType::UnexpectedToken {
-                    found: spanned.token.clone(),
-                    expected: vec![
-                        Token::Int,
-                        Token::Uint,
-                        Token::Bool,
-                        Token::Float,
-                        Token::String,
-                    ],
-                },
-                token_loc: Some(spanned.start_loc.clone()),
-            }),
+            Some(spanned) => {
+                println!("error");
+                Err(ParseError {
+                    error: ParseErrorType::UnexpectedToken {
+                        found: spanned.token.clone(),
+                        expected: vec![
+                            Token::Int,
+                            Token::Uint,
+                            Token::Bool,
+                            Token::Float,
+                            Token::String,
+                        ],
+                    },
+                    token_loc: Some(spanned.start_loc.clone()),
+                })
+            }
             None => Err(ParseError {
                 error: ParseErrorType::EndOfFile,
                 token_loc: None,

@@ -772,6 +772,7 @@ where
 
 #[cfg(test)]
 mod tests {
+    use pretty_assertions::assert_eq;
     use std::str::Chars;
 
     use super::*;
@@ -879,6 +880,12 @@ struct road_info:
 actor my_car:
     var road_info: road_info
     var speed: float
+
+scenario my_scenario:
+    do serial:
+        emit start_ev
+
+        my_car.speed
 ";
         let result = lex_source(source);
         assert_eq!(
@@ -934,6 +941,33 @@ actor my_car:
                 Token::Float,
                 Token::Newline,
                 Token::Dedent,
+                Token::Scenario,
+                Token::Identifier {
+                    identifier: "my_scenario".to_string()
+                },
+                Token::Colon,
+                Token::Newline,
+                Token::Indent,
+                Token::Do,
+                Token::Serial,
+                Token::Colon,
+                Token::Newline,
+                Token::Indent,
+                Token::Emit,
+                Token::Identifier {
+                    identifier: "start_ev".to_string()
+                },
+                Token::Newline,
+                Token::Identifier {
+                    identifier: "my_car".to_string()
+                },
+                Token::Period,
+                Token::Identifier {
+                    identifier: "speed".to_string()
+                },
+                Token::Newline,
+                Token::Dedent,
+                Token::Dedent,
             ]
         )
     }
@@ -943,6 +977,9 @@ actor my_car:
         let source = "
 struct simple_struct:
     member1: int  # ignore comment
+    
+
+    member2: float
 ";
         let result = lex_source(source);
         assert_eq!(
@@ -960,6 +997,13 @@ struct simple_struct:
                 },
                 Token::Colon,
                 Token::Int,
+                Token::Newline,
+                Token::Identifier {
+                    identifier: "member2".to_string(),
+                },
+                Token::Colon,
+                Token::Float,
+                Token::Newline,
                 Token::Dedent
             ]
         );

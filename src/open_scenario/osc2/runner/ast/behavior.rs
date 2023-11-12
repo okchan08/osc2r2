@@ -25,7 +25,7 @@ impl BehaviorSpecification {
         };
         match span.token {
             Token::On => {
-                todo!()
+                todo!("on directive is not supported yet")
             }
             Token::Do => Ok(BehaviorSpecification::Do(DoDirective::parse_do_directive(
                 span_iter,
@@ -226,6 +226,7 @@ impl Composition {
                 start_loc,
                 ..
             }) => {
+                println!("argument list in composition is not supported yet.");
                 return Err(ParseError {
                     error: ParseErrorType::Unsupported { found: Token::Lpar },
                     token_loc: Some(start_loc.clone()),
@@ -235,41 +236,18 @@ impl Composition {
                 token: Token::Colon,
                 ..
             }) => {
-                let Some(span) = span_iter.next() else {
-                  return Err(ParseError {
-                  error: ParseErrorType::EndOfFile,
-                  token_loc: None,
-                  });
-                };
-                if !matches!(span.token, Token::Newline) {
-                    return Err(ParseError {
-                        error: ParseErrorType::UnexpectedToken {
-                            found: span.token.clone(),
-                            expected: vec![Token::Newline],
-                        },
-                        token_loc: Some(span.start_loc.clone()),
-                    });
-                }
-                let Some(span) = span_iter.next() else {
-                  return Err(ParseError {
-                  error: ParseErrorType::EndOfFile,
-                  token_loc: None,
-                  });
-                };
-                if !matches!(span.token, Token::Indent) {
-                    return Err(ParseError {
-                        error: ParseErrorType::UnexpectedToken {
-                            found: span.token.clone(),
-                            expected: vec![Token::Indent],
-                        },
-                        token_loc: Some(span.start_loc.clone()),
-                    });
-                }
+                utils::consume_one_token(span_iter, Token::Newline)?;
+                utils::consume_one_token(span_iter, Token::Indent)?;
                 loop {
                     if let Some(span) = span_iter.peek(0) {
                         if matches!(span.token, Token::Dedent) {
                             span_iter.next();
+                            println!("end of do members in composition");
                             break;
+                        }
+                        if matches!(span.token, Token::Newline) {
+                            span_iter.next();
+                            continue;
                         }
                         composition
                             .members
@@ -347,7 +325,13 @@ impl BehaviorInvocation {
                     span_iter.next();
                 }
                 _ => {
-                    todo!()
+                    return Err(ParseError {
+                        error: ParseErrorType::UnexpectedToken {
+                            found: span.token.clone(),
+                            expected: vec![Token::With, Token::Newline],
+                        },
+                        token_loc: Some(span.start_loc.clone()),
+                    });
                 }
             }
         }
@@ -388,7 +372,7 @@ impl BehaviorWithMember {
                     ));
                 }
                 _ => {
-                    todo!()
+                    todo!("modifier application or until directive not supported yet")
                 }
             }
         }
