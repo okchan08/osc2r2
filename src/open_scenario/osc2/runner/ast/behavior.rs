@@ -364,15 +364,26 @@ impl BehaviorWithMember {
         span_iter: &mut SpanIterator,
     ) -> Result<Vec<BehaviorWithMember>, ParseError> {
         let mut results = vec![];
-        if let Some(span) = span_iter.peek(0) {
-            match span.token {
-                Token::Keep | Token::RemoveDefault => {
-                    results.push(BehaviorWithMember::Constraint(
-                        Constraint::parse_constraint(span_iter)?,
-                    ));
-                }
-                _ => {
-                    todo!("modifier application or until directive not supported yet")
+        loop {
+            if let Some(span) = span_iter.peek(0) {
+                match span.token {
+                    Token::Keep | Token::RemoveDefault => {
+                        results.push(BehaviorWithMember::Constraint(
+                            Constraint::parse_constraint(span_iter)?,
+                        ));
+                    }
+                    Token::Newline => {
+                        // consume empty line
+                        span_iter.next();
+                    }
+                    Token::Dedent => {
+                        // end of with member decl.
+                        span_iter.next();
+                        break;
+                    }
+                    _ => {
+                        todo!("modifier application or until directive not supported yet")
+                    }
                 }
             }
         }
