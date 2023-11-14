@@ -1,5 +1,6 @@
 use crate::open_scenario::osc2::runner::{
     ast::{
+        argument::ArgumentList,
         errors::{ParseError, ParseErrorType},
         identifier::Identifier,
         parser::SpanIterator,
@@ -8,65 +9,59 @@ use crate::open_scenario::osc2::runner::{
     lex::token::Token,
 };
 
-use super::{primary::PrimaryExpression, EvaluationError, ExpressionValue};
+use super::{primary::PrimaryExpression, EvaluationError, Expression, ExpressionValue};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
-pub enum PostfixExpression {
-    // TODO define other types.
-    Primary(PrimaryExpression),
-    FieldAccess {
-        postfix: Box<PostfixExpression>,
-        field_name: Identifier,
-    },
+pub struct PostfixExpression {
+    // handle chain of post fix expression
+    // ex: my_struct.inner_struct.as(list of int)[0]
+    pub primary_expr: PrimaryExpression,
+    pub inner_exprs: Vec<InnerPostfixExpression>,
+}
+
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+pub enum InnerPostfixExpression {
+    // TODO cast and type test is not supported yet.
+    Cast,
+    TypeTest,
+    ElementAccess { index: Expression },
+    FunctionApplication { args: Option<ArgumentList> },
+    FieldAccess { field_name: Identifier },
 }
 
 impl PostfixExpression {
     pub fn parse_post_fix_expression(
         span_iter: &mut SpanIterator,
     ) -> Result<PostfixExpression, ParseError> {
-        let post_fix_exp = if PostfixExpression::is_primary_expression_start(span_iter) {
-            Ok(PostfixExpression::Primary(
-                PrimaryExpression::parse_primary_expression(span_iter)?,
-            ))
-        } else {
-            PostfixExpression::parse_post_fix_expression(span_iter)
+        let primary_expr = PrimaryExpression::parse_primary_expression(span_iter)?;
+        let mut post_fix_expr = PostfixExpression {
+            primary_expr,
+            inner_exprs: vec![],
         };
 
-        //let post_fix = PostfixExpression::parse_post_fix_expression(span_iter)?;
-        let Some(span) = span_iter.peek(0) else {
-            return post_fix_exp;
-        };
-
-        match &span.token {
-            Token::Period => {
-                utils::consume_one_token(span_iter, Token::Period)?;
-                let Some(next_span) = span_iter.peek(0) else {
-                    return Err(ParseError{error: ParseErrorType::EndOfFile, token_loc: None});
-                };
-                match &next_span.token {
-                    Token::As => {
-                        utils::consume_one_token(span_iter, Token::As)?;
-                        utils::consume_one_token(span_iter, Token::Lpar)?;
-                        todo!("cast is not supported")
-                    }
-                    Token::Is => {
-                        utils::consume_one_token(span_iter, Token::Is)?;
-                        utils::consume_one_token(span_iter, Token::Lpar)?;
-                        todo!("cast is not supported")
-                    }
-                    Token::Identifier { identifier } => {
-                        span_iter.next();
-                        return Ok(PostfixExpression::FieldAccess {
-                            postfix: Box::new(post_fix_exp?),
-                            field_name: Identifier {
-                                name: identifier.to_owned(),
-                            },
-                        });
-                    }
-                    _ => {
-                        return Err(ParseError {
+        while let Some(span) = span_iter.peek(0) {
+            let inner_expr = match span.token {
+                Token::Period => {
+                    utils::consume_one_token(span_iter, Token::Period)?;
+                    let spnd = span_iter.peek(0).ok_or(ParseError {
+                        error: ParseErrorType::EndOfFile,
+                        token_loc: None,
+                    })?;
+                    // TODO fix here to parse inner elements!
+                    match &spnd.token {
+                        Token::As => todo!("cast is not supported yet"),
+                        Token::Is => todo!("type test is not supported yet"),
+                        Token::Identifier { identifier } => {
+                            span_iter.next();
+                            Ok(InnerPostfixExpression::FieldAccess {
+                                field_name: Identifier {
+                                    name: identifier.to_owned(),
+                                },
+                            })
+                        }
+                        _ => Err(ParseError {
                             error: ParseErrorType::UnexpectedToken {
-                                found: next_span.token.clone(),
+                                found: span.token.clone(),
                                 expected: vec![
                                     Token::As,
                                     Token::Is,
@@ -75,29 +70,19 @@ impl PostfixExpression {
                                     },
                                 ],
                             },
-                            token_loc: Some(next_span.start_loc.clone()),
-                        });
+                            token_loc: Some(span.start_loc.clone()),
+                        }),
                     }
                 }
-            }
-            Token::Lpar => {
-                println!("function application not supported");
-                return Err(ParseError {
-                    error: ParseErrorType::Unsupported { found: Token::Lpar },
-                    token_loc: Some(span.start_loc),
-                });
-            }
-            Token::Lsqb => {
-                println!("element access is not supported");
-                return Err(ParseError {
-                    error: ParseErrorType::Unsupported { found: Token::Lsqb },
-                    token_loc: Some(span.start_loc),
-                });
-            }
-            _ => {
-                return Ok(post_fix_exp?);
-            }
+                Token::Lsqb => todo!("element access is not supported yet"),
+                Token::Lpar => todo!("function application is not supported yet"),
+                _ => {
+                    break;
+                }
+            }?;
+            post_fix_expr.inner_exprs.push(inner_expr);
         }
+        Ok(post_fix_expr)
     }
 
     fn is_primary_expression_start(span_iter: &SpanIterator) -> bool {
@@ -116,18 +101,20 @@ impl PostfixExpression {
     }
 
     pub fn eval(&self) -> Result<ExpressionValue, EvaluationError> {
-        match self {
-            PostfixExpression::FieldAccess {
-                postfix: _,
-                field_name: _,
-            } => todo!(),
-            PostfixExpression::Primary(exp) => exp.eval(),
+        if self.inner_exprs.len() > 0 {
+            Err(EvaluationError::NotSupportedYet {
+                message: "post fix operation is not supported yet".to_string(),
+            })
+        } else {
+            self.primary_expr.eval()
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use pretty_assertions::assert_eq;
+
     use crate::open_scenario::osc2::runner::ast::{
         expression::value::ValueExpression, tests::util::lex_source,
     };
@@ -164,6 +151,40 @@ mod tests {
                 assert_eq!(result.unwrap(), expected.unwrap());
             } else {
                 assert!(result.is_err());
+            }
+        }
+    }
+
+    #[test]
+    pub fn test_post_fix_expression() {
+        let test_cases: Vec<(String, Result<PostfixExpression, ()>)> = vec![(
+            "my_struct.inner_struct.field_name".to_string(),
+            Ok(PostfixExpression {
+                primary_expr: PrimaryExpression::Identifier(Identifier {
+                    name: "my_struct".to_string(),
+                }),
+                inner_exprs: vec![
+                    InnerPostfixExpression::FieldAccess {
+                        field_name: Identifier {
+                            name: "inner_struct".to_string(),
+                        },
+                    },
+                    InnerPostfixExpression::FieldAccess {
+                        field_name: Identifier {
+                            name: "field_name".to_string(),
+                        },
+                    },
+                ],
+            }),
+        )];
+        for (source, expected) in test_cases {
+            let spans = lex_source(source.as_str());
+            let mut span_iter = spans.iter();
+            let res = PostfixExpression::parse_post_fix_expression(&mut span_iter);
+            if expected.is_ok() {
+                assert_eq!(res.unwrap(), expected.unwrap());
+            } else {
+                assert!(res.is_err());
             }
         }
     }

@@ -208,6 +208,7 @@ impl TryFrom<&Spanned> for CompositionOp {
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(super) struct Composition {
     operator: CompositionOp,
+    args: Option<ArgumentList>,
     members: Vec<DoMember>,
 }
 
@@ -216,6 +217,7 @@ impl Composition {
         let composit_op = CompositionOp::try_from(span_iter.next().unwrap())?;
         let mut composition = Composition {
             operator: composit_op,
+            args: None,
             members: vec![],
         };
 
@@ -225,11 +227,9 @@ impl Composition {
                 start_loc,
                 ..
             }) => {
-                println!("argument list in composition is not supported yet.");
-                return Err(ParseError {
-                    error: ParseErrorType::Unsupported { found: Token::Lpar },
-                    token_loc: Some(start_loc.clone()),
-                });
+                let args = ArgumentList::parse_arguments(span_iter)?;
+                utils::consume_one_token(span_iter, Token::Rpar)?;
+                composition.args = Some(args);
             }
             Some(Spanned {
                 token: Token::Colon,
@@ -241,7 +241,6 @@ impl Composition {
                     if let Some(span) = span_iter.peek(0) {
                         if matches!(span.token, Token::Dedent) {
                             span_iter.next();
-                            println!("end of do members in composition");
                             break;
                         }
                         if matches!(span.token, Token::Newline) {
@@ -287,6 +286,10 @@ impl BehaviorInvocation {
         span_iter: &mut SpanIterator,
     ) -> Result<BehaviorInvocation, ParseError> {
         let (actor_name, name) = utils::parse_qualified_behavior_name(span_iter)?;
+        if name.name == "run_car" {
+            println!("{:?} {:?}", actor_name, name);
+            println!("{:?}", span_iter.peek(0));
+        }
         let mut behavior_invocation = BehaviorInvocation {
             actor_name,
             name,

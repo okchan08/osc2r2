@@ -74,18 +74,7 @@ impl Struct {
                 }
                 _ => {
                     break;
-                } //Token::Newline => {
-                  //    break;
-                  //}
-                  //_ => {
-                  //    return Err(ParseError {
-                  //        error: ParseErrorType::UnexpectedToken {
-                  //            found: span.token.clone(),
-                  //            expected: vec![Token::Colon, Token::Newline, Token::Inherits],
-                  //        },
-                  //        token_loc: Some(span.start_loc.clone()),
-                  //    });
-                  //}
+                }
             }
         }
         Ok(osc_struct)

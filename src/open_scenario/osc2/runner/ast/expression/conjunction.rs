@@ -79,9 +79,12 @@ mod tests {
                     Inversion::Relation(Relation {
                         left_sum: Sum {
                             term: Term {
-                                factor: Factor::PostfixExpression(PostfixExpression::Primary(
-                                    PrimaryExpression::Value(ValueExpression::Bool(true)),
-                                )),
+                                factor: Factor::PostfixExpression(PostfixExpression {
+                                    primary_expr: PrimaryExpression::Value(ValueExpression::Bool(
+                                        true,
+                                    )),
+                                    inner_exprs: vec![],
+                                }),
                                 multiplications: vec![],
                             },
                             additivations: vec![],
@@ -91,9 +94,12 @@ mod tests {
                     Inversion::Not(Relation {
                         left_sum: Sum {
                             term: Term {
-                                factor: Factor::PostfixExpression(PostfixExpression::Primary(
-                                    PrimaryExpression::Value(ValueExpression::Bool(false)),
-                                )),
+                                factor: Factor::PostfixExpression(PostfixExpression {
+                                    primary_expr: PrimaryExpression::Value(ValueExpression::Bool(
+                                        false,
+                                    )),
+                                    inner_exprs: vec![],
+                                }),
                                 multiplications: vec![],
                             },
                             additivations: vec![],
@@ -103,9 +109,12 @@ mod tests {
                     Inversion::Relation(Relation {
                         left_sum: Sum {
                             term: Term {
-                                factor: Factor::PostfixExpression(PostfixExpression::Primary(
-                                    PrimaryExpression::Value(ValueExpression::Integer(1)),
-                                )),
+                                factor: Factor::PostfixExpression(PostfixExpression {
+                                    primary_expr: PrimaryExpression::Value(
+                                        ValueExpression::Integer(1),
+                                    ),
+                                    inner_exprs: vec![],
+                                }),
                                 multiplications: vec![],
                             },
                             additivations: vec![],
@@ -114,9 +123,12 @@ mod tests {
                             operator: BinaryRelationOp::Eq,
                             right_sum: Sum {
                                 term: Term {
-                                    factor: Factor::PostfixExpression(PostfixExpression::Primary(
-                                        PrimaryExpression::Value(ValueExpression::Integer(1)),
-                                    )),
+                                    factor: Factor::PostfixExpression(PostfixExpression {
+                                        primary_expr: PrimaryExpression::Value(
+                                            ValueExpression::Integer(1),
+                                        ),
+                                        inner_exprs: vec![],
+                                    }),
                                     multiplications: vec![],
                                 },
                                 additivations: vec![],

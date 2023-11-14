@@ -51,7 +51,9 @@ mod tests {
     use ordered_float::OrderedFloat;
 
     use crate::open_scenario::osc2::runner::ast::{
-        expression::{primary::PrimaryExpression, value::ValueExpression},
+        expression::{
+            postfix::InnerPostfixExpression, primary::PrimaryExpression, value::ValueExpression,
+        },
         identifier::Identifier,
         tests::util::lex_source,
     };
@@ -63,21 +65,24 @@ mod tests {
         let test_cases = vec![
             (
                 "123.12345".to_string(),
-                Ok(PostfixExpression::Primary(PrimaryExpression::Value(
-                    ValueExpression::Float(OrderedFloat(123.12345)),
-                ))),
+                Ok(PostfixExpression {
+                    primary_expr: PrimaryExpression::Value(ValueExpression::Float(OrderedFloat(
+                        123.12345,
+                    ))),
+                    inner_exprs: vec![],
+                }),
             ),
             (
                 "actor_name.field_name".to_string(),
-                Ok(PostfixExpression::FieldAccess {
-                    postfix: Box::new(PostfixExpression::Primary(PrimaryExpression::Identifier(
-                        Identifier {
-                            name: "actor_name".to_string(),
+                Ok(PostfixExpression {
+                    primary_expr: PrimaryExpression::Identifier(Identifier {
+                        name: "actor_name".to_string(),
+                    }),
+                    inner_exprs: vec![InnerPostfixExpression::FieldAccess {
+                        field_name: Identifier {
+                            name: "field_name".to_string(),
                         },
-                    ))),
-                    field_name: Identifier {
-                        name: "field_name".to_string(),
-                    },
+                    }],
                 }),
             ),
             ("actor_name. .field_name".to_string(), Err(())),

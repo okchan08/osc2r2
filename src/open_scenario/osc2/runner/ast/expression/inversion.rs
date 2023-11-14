@@ -65,9 +65,10 @@ mod tests {
                 Ok(Inversion::Not(Relation {
                     left_sum: Sum {
                         term: Term {
-                            factor: Factor::PostfixExpression(PostfixExpression::Primary(
-                                PrimaryExpression::Value(ValueExpression::Integer(1)),
-                            )),
+                            factor: Factor::PostfixExpression(PostfixExpression {
+                                primary_expr: PrimaryExpression::Value(ValueExpression::Integer(1)),
+                                inner_exprs: vec![],
+                            }),
                             multiplications: vec![],
                         },
                         additivations: vec![],
@@ -76,9 +77,12 @@ mod tests {
                         operator: BinaryRelationOp::Lt,
                         right_sum: Sum {
                             term: Term {
-                                factor: Factor::PostfixExpression(PostfixExpression::Primary(
-                                    PrimaryExpression::Value(ValueExpression::Integer(2)),
-                                )),
+                                factor: Factor::PostfixExpression(PostfixExpression {
+                                    primary_expr: PrimaryExpression::Value(
+                                        ValueExpression::Integer(2),
+                                    ),
+                                    inner_exprs: vec![],
+                                }),
                                 multiplications: vec![],
                             },
                             additivations: vec![],
@@ -92,9 +96,10 @@ mod tests {
                 Ok(Inversion::Not(Relation {
                     left_sum: Sum {
                         term: Term {
-                            factor: Factor::PostfixExpression(PostfixExpression::Primary(
-                                PrimaryExpression::Value(ValueExpression::Integer(1)),
-                            )),
+                            factor: Factor::PostfixExpression(PostfixExpression {
+                                primary_expr: PrimaryExpression::Value(ValueExpression::Integer(1)),
+                                inner_exprs: vec![],
+                            }),
                             multiplications: vec![],
                         },
                         additivations: vec![],

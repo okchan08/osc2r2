@@ -174,9 +174,10 @@ mod tests {
             (
                 "123".to_string(),
                 Ok(Term {
-                    factor: Factor::PostfixExpression(PostfixExpression::Primary(
-                        PrimaryExpression::Value(ValueExpression::Integer(123)),
-                    )),
+                    factor: Factor::PostfixExpression(PostfixExpression {
+                        primary_expr: PrimaryExpression::Value(ValueExpression::Integer(123)),
+                        inner_exprs: vec![],
+                    }),
                     multiplications: vec![],
                 }),
                 ExpressionValue::Int(123),
@@ -185,9 +186,12 @@ mod tests {
                 "-98.7".to_string(),
                 Ok(Term {
                     factor: Factor::NegativeFactor(Box::new(Factor::PostfixExpression(
-                        PostfixExpression::Primary(PrimaryExpression::Value(
-                            ValueExpression::Float(OrderedFloat(98.7)),
-                        )),
+                        PostfixExpression {
+                            primary_expr: PrimaryExpression::Value(ValueExpression::Float(
+                                OrderedFloat(98.7),
+                            )),
+                            inner_exprs: vec![],
+                        },
                     ))),
                     multiplications: vec![],
                 }),
@@ -197,17 +201,19 @@ mod tests {
                 "-34 * 67.8   ".to_string(),
                 Ok(Term {
                     factor: Factor::NegativeFactor(Box::new(Factor::PostfixExpression(
-                        PostfixExpression::Primary(PrimaryExpression::Value(
-                            ValueExpression::Integer(34),
-                        )),
+                        PostfixExpression {
+                            primary_expr: PrimaryExpression::Value(ValueExpression::Integer(34)),
+                            inner_exprs: vec![],
+                        },
                     ))),
                     multiplications: vec![Multiplication {
                         operation: MultiplicativeOperation::Mul,
-                        right_factor: Box::new(Factor::PostfixExpression(
-                            PostfixExpression::Primary(PrimaryExpression::Value(
-                                ValueExpression::Float(OrderedFloat(67.8)),
+                        right_factor: Box::new(Factor::PostfixExpression(PostfixExpression {
+                            primary_expr: PrimaryExpression::Value(ValueExpression::Float(
+                                OrderedFloat(67.8),
                             )),
-                        )),
+                            inner_exprs: vec![],
+                        })),
                     }],
                 }),
                 ExpressionValue::Float(OrderedFloat(-2305.2)),
@@ -216,26 +222,29 @@ mod tests {
                 "-34 * 67.8  / 10 ".to_string(),
                 Ok(Term {
                     factor: Factor::NegativeFactor(Box::new(Factor::PostfixExpression(
-                        PostfixExpression::Primary(PrimaryExpression::Value(
-                            ValueExpression::Integer(34),
-                        )),
+                        PostfixExpression {
+                            primary_expr: PrimaryExpression::Value(ValueExpression::Integer(34)),
+                            inner_exprs: vec![],
+                        },
                     ))),
                     multiplications: vec![
                         Multiplication {
                             operation: MultiplicativeOperation::Mul,
-                            right_factor: Box::new(Factor::PostfixExpression(
-                                PostfixExpression::Primary(PrimaryExpression::Value(
-                                    ValueExpression::Float(OrderedFloat(67.8)),
+                            right_factor: Box::new(Factor::PostfixExpression(PostfixExpression {
+                                primary_expr: PrimaryExpression::Value(ValueExpression::Float(
+                                    OrderedFloat(67.8),
                                 )),
-                            )),
+                                inner_exprs: vec![],
+                            })),
                         },
                         Multiplication {
                             operation: MultiplicativeOperation::Div,
-                            right_factor: Box::new(Factor::PostfixExpression(
-                                PostfixExpression::Primary(PrimaryExpression::Value(
-                                    ValueExpression::Integer(10),
+                            right_factor: Box::new(Factor::PostfixExpression(PostfixExpression {
+                                primary_expr: PrimaryExpression::Value(ValueExpression::Integer(
+                                    10,
                                 )),
-                            )),
+                                inner_exprs: vec![],
+                            })),
                         },
                     ],
                 }),

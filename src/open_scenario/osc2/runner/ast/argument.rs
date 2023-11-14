@@ -113,11 +113,12 @@ mod tests {
                                         left_sum: Sum {
                                             term: Term {
                                                 factor: Factor::PostfixExpression(
-                                                    PostfixExpression::Primary(
-                                                        PrimaryExpression::Value(
+                                                    PostfixExpression {
+                                                        primary_expr: PrimaryExpression::Value(
                                                             ValueExpression::Integer(1),
                                                         ),
-                                                    ),
+                                                        inner_exprs: vec![],
+                                                    },
                                                 ),
                                                 multiplications: vec![],
                                             },
@@ -135,11 +136,12 @@ mod tests {
                                         left_sum: Sum {
                                             term: Term {
                                                 factor: Factor::PostfixExpression(
-                                                    PostfixExpression::Primary(
-                                                        PrimaryExpression::Value(
+                                                    PostfixExpression {
+                                                        primary_expr: PrimaryExpression::Value(
                                                             ValueExpression::Integer(2),
                                                         ),
-                                                    ),
+                                                        inner_exprs: vec![],
+                                                    },
                                                 ),
                                                 multiplications: vec![],
                                             },
@@ -157,11 +159,12 @@ mod tests {
                                         left_sum: Sum {
                                             term: Term {
                                                 factor: Factor::PostfixExpression(
-                                                    PostfixExpression::Primary(
-                                                        PrimaryExpression::Value(
+                                                    PostfixExpression {
+                                                        primary_expr: PrimaryExpression::Value(
                                                             ValueExpression::Integer(3),
                                                         ),
-                                                    ),
+                                                        inner_exprs: vec![],
+                                                    },
                                                 ),
                                                 multiplications: vec![],
                                             },
@@ -169,11 +172,12 @@ mod tests {
                                                 operation: AdditiveOp::Plus,
                                                 right_term: Box::new(Term {
                                                     factor: Factor::PostfixExpression(
-                                                        PostfixExpression::Primary(
-                                                            PrimaryExpression::Value(
+                                                        PostfixExpression {
+                                                            primary_expr: PrimaryExpression::Value(
                                                                 ValueExpression::Integer(4),
                                                             ),
-                                                        ),
+                                                            inner_exprs: vec![],
+                                                        },
                                                     ),
                                                     multiplications: vec![],
                                                 }),
@@ -200,11 +204,14 @@ mod tests {
                                         left_sum: Sum {
                                             term: Term {
                                                 factor: Factor::PostfixExpression(
-                                                    PostfixExpression::Primary(
-                                                        PrimaryExpression::Identifier(Identifier {
-                                                            name: "value".to_string(),
-                                                        }),
-                                                    ),
+                                                    PostfixExpression {
+                                                        primary_expr: PrimaryExpression::Identifier(
+                                                            Identifier {
+                                                                name: "value".to_string(),
+                                                            },
+                                                        ),
+                                                        inner_exprs: vec![],
+                                                    },
                                                 ),
                                                 multiplications: vec![],
                                             },
@@ -222,11 +229,12 @@ mod tests {
                                         left_sum: Sum {
                                             term: Term {
                                                 factor: Factor::PostfixExpression(
-                                                    PostfixExpression::Primary(
-                                                        PrimaryExpression::Value(
+                                                    PostfixExpression {
+                                                        primary_expr: PrimaryExpression::Value(
                                                             ValueExpression::Integer(2),
                                                         ),
-                                                    ),
+                                                        inner_exprs: vec![],
+                                                    },
                                                 ),
                                                 multiplications: vec![],
                                             },
@@ -250,11 +258,12 @@ mod tests {
                                             left_sum: Sum {
                                                 term: Term {
                                                     factor: Factor::PostfixExpression(
-                                                        PostfixExpression::Primary(
-                                                            PrimaryExpression::Value(
+                                                        PostfixExpression {
+                                                            primary_expr: PrimaryExpression::Value(
                                                                 ValueExpression::Integer(3),
                                                             ),
-                                                        ),
+                                                            inner_exprs: vec![],
+                                                        },
                                                     ),
                                                     multiplications: vec![],
                                                 },
@@ -277,13 +286,16 @@ mod tests {
                                             left_sum: Sum {
                                                 term: Term {
                                                     factor: Factor::PostfixExpression(
-                                                        PostfixExpression::Primary(
-                                                            PrimaryExpression::Identifier(
-                                                                Identifier {
-                                                                    name: "my_struct".to_string(),
-                                                                },
-                                                            ),
-                                                        ),
+                                                        PostfixExpression {
+                                                            primary_expr:
+                                                                PrimaryExpression::Identifier(
+                                                                    Identifier {
+                                                                        name: "my_struct"
+                                                                            .to_string(),
+                                                                    },
+                                                                ),
+                                                            inner_exprs: vec![],
+                                                        },
                                                     ),
                                                     multiplications: vec![],
                                                 },

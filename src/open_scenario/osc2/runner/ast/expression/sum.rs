@@ -157,6 +157,7 @@ mod tests {
         },
         tests::util::lex_source,
     };
+    use pretty_assertions::assert_eq;
 
     use super::*;
 
@@ -166,35 +167,45 @@ mod tests {
             "50.0 + 34 * -67.8  / 10 - 23.0".to_string(),
             Ok(Sum {
                 term: Term {
-                    factor: Factor::PostfixExpression(PostfixExpression::Primary(
-                        PrimaryExpression::Value(ValueExpression::Float(OrderedFloat(50.0))),
-                    )),
+                    factor: Factor::PostfixExpression(PostfixExpression {
+                        primary_expr: PrimaryExpression::Value(ValueExpression::Float(
+                            OrderedFloat(50.0),
+                        )),
+                        inner_exprs: vec![],
+                    }),
                     multiplications: vec![],
                 },
                 additivations: vec![
                     Additivation {
                         operation: AdditiveOp::Plus,
                         right_term: Box::new(Term {
-                            factor: Factor::PostfixExpression(PostfixExpression::Primary(
-                                PrimaryExpression::Value(ValueExpression::Integer(34)),
-                            )),
+                            factor: Factor::PostfixExpression(PostfixExpression {
+                                primary_expr: PrimaryExpression::Value(ValueExpression::Integer(
+                                    34,
+                                )),
+                                inner_exprs: vec![],
+                            }),
                             multiplications: vec![
                                 Multiplication {
                                     operation: MultiplicativeOperation::Mul,
                                     right_factor: Box::new(Factor::NegativeFactor(Box::new(
-                                        Factor::PostfixExpression(PostfixExpression::Primary(
-                                            PrimaryExpression::Value(ValueExpression::Float(
-                                                OrderedFloat(67.8),
-                                            )),
-                                        )),
+                                        Factor::PostfixExpression(PostfixExpression {
+                                            primary_expr: PrimaryExpression::Value(
+                                                ValueExpression::Float(OrderedFloat(67.8)),
+                                            ),
+                                            inner_exprs: vec![],
+                                        }),
                                     ))),
                                 },
                                 Multiplication {
                                     operation: MultiplicativeOperation::Div,
                                     right_factor: Box::new(Factor::PostfixExpression(
-                                        PostfixExpression::Primary(PrimaryExpression::Value(
-                                            ValueExpression::Integer(10),
-                                        )),
+                                        PostfixExpression {
+                                            primary_expr: PrimaryExpression::Value(
+                                                ValueExpression::Integer(10),
+                                            ),
+                                            inner_exprs: vec![],
+                                        },
                                     )),
                                 },
                             ],
@@ -203,11 +214,12 @@ mod tests {
                     Additivation {
                         operation: AdditiveOp::Minus,
                         right_term: Box::new(Term {
-                            factor: Factor::PostfixExpression(PostfixExpression::Primary(
-                                PrimaryExpression::Value(ValueExpression::Float(OrderedFloat(
-                                    23.0,
-                                ))),
-                            )),
+                            factor: Factor::PostfixExpression(PostfixExpression {
+                                primary_expr: PrimaryExpression::Value(ValueExpression::Float(
+                                    OrderedFloat(23.0),
+                                )),
+                                inner_exprs: vec![],
+                            }),
                             multiplications: vec![],
                         }),
                     },

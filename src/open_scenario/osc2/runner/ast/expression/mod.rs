@@ -95,6 +95,7 @@ impl ExpressionValue {
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub enum EvaluationError {
     InvalidOperation,
+    NotSupportedYet { message: String },
 }
 
 #[cfg(test)]

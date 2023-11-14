@@ -5,7 +5,7 @@ use crate::open_scenario::osc2::runner::{
 
 use super::{
     constraint::Constraint, errors::ParseError, expression::Expression, identifier::Identifier,
-    parser::SpanIterator, value::Value,
+    parser::SpanIterator, utils, value::Value,
 };
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
@@ -87,7 +87,7 @@ impl Field {
 pub(super) struct Parameter {
     pub name: Identifier,
     pub field_type: Type,
-    pub default_value: Option<Value>,
+    pub default_value: Option<Expression>,
     pub constraints: Vec<Constraint>,
 }
 
@@ -96,19 +96,15 @@ impl Parameter {
         let names = Field::parse_field_name_list(span_iter)?;
         let mut constraints = vec![];
         let defined_type = Type::parse_type(span_iter)?;
+        let mut default_val = None;
         loop {
             match span_iter.peek(0) {
                 Some(Spanned {
                     token: Token::Equal,
-                    start_loc,
                     ..
                 }) => {
-                    return Err(ParseError {
-                        error: ParseErrorType::Unsupported {
-                            found: Token::Equal,
-                        },
-                        token_loc: Some(*start_loc),
-                    });
+                    utils::consume_one_token(span_iter, Token::Equal)?;
+                    default_val = Some(Expression::parse_expression(span_iter)?);
                 }
                 Some(Spanned {
                     token: Token::With, ..
@@ -144,7 +140,7 @@ impl Parameter {
             .map(|name| Parameter {
                 name: name,
                 field_type: defined_type.clone(),
-                default_value: None,
+                default_value: default_val.clone(),
                 constraints: constraints.to_vec(),
             })
             .collect())

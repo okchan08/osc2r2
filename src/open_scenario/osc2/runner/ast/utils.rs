@@ -88,7 +88,7 @@ pub(super) fn consume_one_token(
     expect: Token,
 ) -> Result<(), ParseError> {
     if let Some(span) = span_iter.next() {
-        if matches!(&span.token, expect) {
+        if span.token == expect {
             Ok(())
         } else {
             Err(ParseError {
@@ -104,5 +104,26 @@ pub(super) fn consume_one_token(
             error: ParseErrorType::EndOfFile,
             token_loc: None,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::open_scenario::osc2::runner::ast::tests::util::lex_source;
+
+    use super::*;
+
+    #[test]
+    pub fn test_consume_one_token() {
+        let source = "
+actor with () do";
+
+        let spans = lex_source(source);
+        let mut span_iter = spans.iter();
+        assert!(consume_one_token(&mut span_iter, Token::Actor).is_ok());
+        assert!(consume_one_token(&mut span_iter, Token::With).is_ok());
+        assert!(consume_one_token(&mut span_iter, Token::Lpar).is_ok());
+        assert!(consume_one_token(&mut span_iter, Token::Rpar).is_ok());
+        assert!(consume_one_token(&mut span_iter, Token::Scenario).is_err());
     }
 }
