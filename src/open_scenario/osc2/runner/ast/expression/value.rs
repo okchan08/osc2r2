@@ -4,6 +4,7 @@ use crate::open_scenario::osc2::runner::{
     ast::{
         errors::{ParseError, ParseErrorType},
         parser::SpanIterator,
+        tests::util,
         utils,
     },
     lex::token::Token,
@@ -15,6 +16,7 @@ use super::{EvaluationError, ExpressionValue};
 pub enum ValueExpression {
     // TODO enable remaining value expressions.
     Integer(i64),
+    Uinteger(u64),
     Float(OrderedFloat<f64>),
     // Physical
     Bool(bool),
@@ -32,7 +34,12 @@ impl ValueExpression {
         match &span.token {
             Token::IntNumber(num) => {
                 span_iter.next();
-                Ok(ValueExpression::Integer(*num))
+                Ok(ValueExpression::Uinteger(*num))
+            }
+            Token::Minus => {
+                utils::consume_one_token(span_iter, Token::Minus)?;
+                let num = utils::parse_integer(span_iter)?;
+                Ok(ValueExpression::Integer((num as i64) * -1))
             }
             Token::FloatNumber(num) => {
                 span_iter.next();
@@ -79,6 +86,22 @@ impl ValueExpression {
         }
     }
 
+    pub fn parse_uint_literal(span_iter: &mut SpanIterator) -> Result<u64, ParseError> {
+        let Some(span) = span_iter.peek(0) else {
+        return Err(ParseError { error: ParseErrorType::EndOfFile, token_loc: None });
+      };
+        match &span.token {
+            Token::IntNumber(num) => Ok(*num),
+            _ => Err(ParseError {
+                error: ParseErrorType::UnexpectedToken {
+                    found: span.token.clone(),
+                    expected: vec![Token::IntNumber(0)],
+                },
+                token_loc: Some(span.start_loc.clone()),
+            }),
+        }
+    }
+
     fn concate_to_string(span_iter: &mut SpanIterator) -> Result<String, ParseError> {
         let mut ret = String::new();
         let mut count = 0;
@@ -105,6 +128,7 @@ impl ValueExpression {
         match self {
             ValueExpression::Bool(val) => Ok(ExpressionValue::Bool(*val)),
             ValueExpression::Integer(val) => Ok(ExpressionValue::Int(*val)),
+            ValueExpression::Uinteger(val) => Ok(ExpressionValue::Uint(*val)),
             ValueExpression::Float(val) => Ok(ExpressionValue::Float(*val)),
             ValueExpression::String(val) => Ok(ExpressionValue::String(val.to_owned())),
         }
@@ -119,7 +143,7 @@ mod tests {
     #[test]
     pub fn test_value_expression() {
         let test_cases = vec![
-            ("123".to_string(), Ok(ValueExpression::Integer(123))),
+            ("123".to_string(), Ok(ValueExpression::Uinteger(123))),
             (
                 "4.567".to_string(),
                 Ok(ValueExpression::Float(OrderedFloat(4.567))),

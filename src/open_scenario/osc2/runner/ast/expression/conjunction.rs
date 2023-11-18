@@ -111,7 +111,7 @@ mod tests {
                             term: Term {
                                 factor: Factor::PostfixExpression(PostfixExpression {
                                     primary_expr: PrimaryExpression::Value(
-                                        ValueExpression::Integer(1),
+                                        ValueExpression::Uinteger(1),
                                     ),
                                     inner_exprs: vec![],
                                 }),
@@ -125,7 +125,7 @@ mod tests {
                                 term: Term {
                                     factor: Factor::PostfixExpression(PostfixExpression {
                                         primary_expr: PrimaryExpression::Value(
-                                            ValueExpression::Integer(1),
+                                            ValueExpression::Uinteger(1),
                                         ),
                                         inner_exprs: vec![],
                                     }),

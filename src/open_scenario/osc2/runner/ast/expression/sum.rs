@@ -66,6 +66,30 @@ impl Sum {
         let mut result = self.term.eval()?;
         for additivation in &self.additivations {
             match (result, additivation.right_term.eval()?) {
+                (Uint(left), Int(right)) => match additivation.operation {
+                    Plus => {
+                        result = ExpressionValue::Int((left as i64) + right);
+                    }
+                    Minus => {
+                        result = ExpressionValue::Int((left as i64) - right);
+                    }
+                },
+                (Int(left), Uint(right)) => match additivation.operation {
+                    Plus => {
+                        result = ExpressionValue::Int(left + (right as i64));
+                    }
+                    Minus => {
+                        result = ExpressionValue::Int(left - (right as i64));
+                    }
+                },
+                (Uint(left), Uint(right)) => match additivation.operation {
+                    Plus => {
+                        result = ExpressionValue::Uint(left + right);
+                    }
+                    Minus => {
+                        result = ExpressionValue::Uint(left - right);
+                    }
+                },
                 (Int(left), Int(right)) => match additivation.operation {
                     Plus => {
                         result = ExpressionValue::Int(left + right);
@@ -83,6 +107,22 @@ impl Sum {
                     }
                 },
                 (Float(left), Int(right)) => match additivation.operation {
+                    Plus => {
+                        result = ExpressionValue::Float(OrderedFloat(left.0 + right as f64));
+                    }
+                    Minus => {
+                        result = ExpressionValue::Float(OrderedFloat(left.0 - right as f64));
+                    }
+                },
+                (Uint(left), Float(right)) => match additivation.operation {
+                    Plus => {
+                        result = ExpressionValue::Float(OrderedFloat(left as f64 + right.0));
+                    }
+                    Minus => {
+                        result = ExpressionValue::Float(OrderedFloat(left as f64 - right.0));
+                    }
+                },
+                (Float(left), Uint(right)) => match additivation.operation {
                     Plus => {
                         result = ExpressionValue::Float(OrderedFloat(left.0 + right as f64));
                     }
@@ -180,7 +220,7 @@ mod tests {
                         operation: AdditiveOp::Plus,
                         right_term: Box::new(Term {
                             factor: Factor::PostfixExpression(PostfixExpression {
-                                primary_expr: PrimaryExpression::Value(ValueExpression::Integer(
+                                primary_expr: PrimaryExpression::Value(ValueExpression::Uinteger(
                                     34,
                                 )),
                                 inner_exprs: vec![],
@@ -202,7 +242,7 @@ mod tests {
                                     right_factor: Box::new(Factor::PostfixExpression(
                                         PostfixExpression {
                                             primary_expr: PrimaryExpression::Value(
-                                                ValueExpression::Integer(10),
+                                                ValueExpression::Uinteger(10),
                                             ),
                                             inner_exprs: vec![],
                                         },

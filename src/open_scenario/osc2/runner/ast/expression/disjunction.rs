@@ -66,6 +66,7 @@ mod tests {
         },
         tests::util::lex_source,
     };
+    use pretty_assertions::assert_eq;
 
     use super::*;
 
@@ -86,7 +87,7 @@ mod tests {
                                     term: Term {
                                         factor: Factor::PostfixExpression(PostfixExpression {
                                             primary_expr: PrimaryExpression::Value(
-                                                ValueExpression::Integer(1),
+                                                ValueExpression::Uinteger(1),
                                             ),
                                             inner_exprs: vec![],
                                         }),
@@ -97,7 +98,7 @@ mod tests {
                                         right_term: Box::new(Term {
                                             factor: Factor::PostfixExpression(PostfixExpression {
                                                 primary_expr: PrimaryExpression::Value(
-                                                    ValueExpression::Integer(1),
+                                                    ValueExpression::Uinteger(1),
                                                 ),
                                                 inner_exprs: vec![],
                                             }),
@@ -111,7 +112,7 @@ mod tests {
                                         term: Term {
                                             factor: Factor::PostfixExpression(PostfixExpression {
                                                 primary_expr: PrimaryExpression::Value(
-                                                    ValueExpression::Integer(2),
+                                                    ValueExpression::Uinteger(2),
                                                 ),
                                                 inner_exprs: vec![],
                                             }),
@@ -169,7 +170,7 @@ mod tests {
                                 term: Term {
                                     factor: Factor::PostfixExpression(PostfixExpression {
                                         primary_expr: PrimaryExpression::Value(
-                                            ValueExpression::Integer(1),
+                                            ValueExpression::Uinteger(1),
                                         ),
                                         inner_exprs: vec![],
                                     }),
@@ -180,7 +181,7 @@ mod tests {
                                     right_term: Box::new(Term {
                                         factor: Factor::PostfixExpression(PostfixExpression {
                                             primary_expr: PrimaryExpression::Value(
-                                                ValueExpression::Integer(2),
+                                                ValueExpression::Uinteger(2),
                                             ),
                                             inner_exprs: vec![],
                                         }),
@@ -192,7 +193,7 @@ mod tests {
                         })],
                     }],
                 }),
-                Ok(ExpressionValue::Int(3)),
+                Ok(ExpressionValue::Uint(3)),
             ),
         ];
         for (source, expected, expected_val) in test_cases {

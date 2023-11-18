@@ -125,7 +125,11 @@ mod tests {
         let test_cases = vec![
             (
                 "123".to_string(),
-                Ok(PrimaryExpression::Value(ValueExpression::Integer(123))),
+                Ok(PrimaryExpression::Value(ValueExpression::Uinteger(123))),
+            ),
+            (
+                "-123".to_string(),
+                Ok(PrimaryExpression::Value(ValueExpression::Integer(-123))),
             ),
             (
                 format!(r##""this is a string expression""##),

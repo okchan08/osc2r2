@@ -3,6 +3,8 @@ use std::fmt;
 
 use crate::open_scenario::osc2::runner::lex::{location::Location, token::Token};
 
+use super::identifier::Identifier;
+
 #[derive(Debug, Default)]
 pub struct ParseError {
     pub error: ParseErrorType,
@@ -49,6 +51,7 @@ pub enum ParseErrorType {
     Unsupported {
         found: Token,
     },
+    DuplicateDefinition(String),
 }
 
 impl fmt::Display for ParseErrorType {
@@ -72,6 +75,9 @@ impl fmt::Display for ParseErrorType {
                 .as_str(),
             ),
             Unsupported { found } => f.write_str(format!("{} not supported yet.", found).as_str()),
+            DuplicateDefinition(msg) => {
+                f.write_str(format!("duplicated definition found. {}", msg).as_str())
+            }
         }
     }
 }

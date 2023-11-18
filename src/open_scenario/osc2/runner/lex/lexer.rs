@@ -492,6 +492,12 @@ where
             ')' => {
                 self.consume_single_char(Token::Rpar);
             }
+            '[' => {
+                self.consume_single_char(Token::Lsqb);
+            }
+            ']' => {
+                self.consume_single_char(Token::Rsqb);
+            }
             '-' => {
                 let start_pos = self.pos();
                 self.next_char();

@@ -66,6 +66,23 @@ pub(super) fn parse_identifier(span_iter: &mut SpanIterator) -> Result<Identifie
     }
 }
 
+pub(super) fn parse_integer(span_iter: &mut SpanIterator) -> Result<u64, ParseError> {
+    if let Some(span) = span_iter.next() {
+        match &span.token {
+            Token::IntNumber(num) => Ok(*num),
+            _ => Err(ParseError {
+                error: ParseErrorType::ActionDeclarationError,
+                token_loc: Some(span.start_loc),
+            }),
+        }
+    } else {
+        Err(ParseError {
+            error: ParseErrorType::EndOfFile,
+            token_loc: None,
+        })
+    }
+}
+
 pub(super) fn peek_next_is_identifier(span_iter: &SpanIterator) -> bool {
     let Some(span) = span_iter.peek(0) else {
         return false;

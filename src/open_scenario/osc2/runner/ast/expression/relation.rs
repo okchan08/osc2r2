@@ -110,12 +110,58 @@ impl BinaryRelationOp {
         right: ExpressionValue,
     ) -> Result<ExpressionValue, EvaluationError> {
         use ExpressionValue::*;
-        match (left, right) {
-            (Int(l), Int(r)) => self.eval_i64(l, r),
-            (Float(l), Int(r)) => self.eval_f64_i64(l.0, r),
-            (Int(l), Float(r)) => self.eval_i64_f64(l, r.0),
-            (Float(l), Float(r)) => self.eval_f64(l.0, r.0),
-            _ => Err(EvaluationError::InvalidOperation),
+        let l = match left {
+            Int(num) => num as f64,
+            Uint(num) => num as f64,
+            Float(num) => num.0,
+            _ => {
+                return Err(EvaluationError::InvalidOperation);
+            }
+        };
+        let r = match right {
+            Int(num) => num as f64,
+            Uint(num) => num as f64,
+            Float(num) => num.0,
+            _ => {
+                return Err(EvaluationError::InvalidOperation);
+            }
+        };
+        self.eval_internal(l, r)
+        //match (left, right) {
+        //    (Int(l), Int(r)) => self.eval_i64(l, r),
+        //    (Float(l), Int(r)) => self.eval_f64_i64(l.0, r),
+        //    (Int(l), Float(r)) => self.eval_i64_f64(l, r.0),
+        //    (Float(l), Float(r)) => self.eval_f64(l.0, r.0),
+        //    _ => Err(EvaluationError::InvalidOperation),
+        //}
+    }
+
+    fn eval_internal<L, R>(&self, left: L, right: R) -> Result<ExpressionValue, EvaluationError>
+    where
+        L: PartialOrd<R>,
+    {
+        use BinaryRelationOp::*;
+        match self {
+            Eq => Ok(ExpressionValue::Bool(left == right)),
+            NotEq => Ok(ExpressionValue::Bool(left != right)),
+            Gt => Ok(ExpressionValue::Bool(left > right)),
+            Ge => Ok(ExpressionValue::Bool(left >= right)),
+            Lt => Ok(ExpressionValue::Bool(left < right)),
+            Le => Ok(ExpressionValue::Bool(left <= right)),
+            In => Err(EvaluationError::InvalidOperation),
+        }
+    }
+
+    fn eval_u64(&self, left: u64, right: u64) -> Result<ExpressionValue, EvaluationError> {
+        use BinaryRelationOp::*;
+        match self {
+            Eq => Ok(ExpressionValue::Bool(left == right)),
+            NotEq => Ok(ExpressionValue::Bool(left != right)),
+            Gt => Ok(ExpressionValue::Bool(left > right)),
+            Ge => Ok(ExpressionValue::Bool(left >= right)),
+            Lt => Ok(ExpressionValue::Bool(left < right)),
+            Le => Ok(ExpressionValue::Bool(left <= right)),
+            In => Err(EvaluationError::InvalidOperation),
         }
     }
 
@@ -201,7 +247,7 @@ mod tests {
                     left_sum: Sum {
                         term: Term {
                             factor: Factor::PostfixExpression(PostfixExpression {
-                                primary_expr: PrimaryExpression::Value(ValueExpression::Integer(
+                                primary_expr: PrimaryExpression::Value(ValueExpression::Uinteger(
                                     10,
                                 )),
                                 inner_exprs: vec![],
@@ -216,7 +262,7 @@ mod tests {
                             term: Term {
                                 factor: Factor::PostfixExpression(PostfixExpression {
                                     primary_expr: PrimaryExpression::Value(
-                                        ValueExpression::Integer(20),
+                                        ValueExpression::Uinteger(20),
                                     ),
                                     inner_exprs: vec![],
                                 }),
@@ -267,7 +313,7 @@ mod tests {
                             right_term: Box::new(Term {
                                 factor: Factor::PostfixExpression(PostfixExpression {
                                     primary_expr: PrimaryExpression::Value(
-                                        ValueExpression::Integer(34),
+                                        ValueExpression::Uinteger(34),
                                     ),
                                     inner_exprs: vec![],
                                 }),
@@ -288,7 +334,7 @@ mod tests {
                                         right_factor: Box::new(Factor::PostfixExpression(
                                             PostfixExpression {
                                                 primary_expr: PrimaryExpression::Value(
-                                                    ValueExpression::Integer(10),
+                                                    ValueExpression::Uinteger(10),
                                                 ),
                                                 inner_exprs: vec![],
                                             },
@@ -326,7 +372,7 @@ mod tests {
                                         right_factor: Box::new(Factor::PostfixExpression(
                                             PostfixExpression {
                                                 primary_expr: PrimaryExpression::Value(
-                                                    ValueExpression::Integer(2),
+                                                    ValueExpression::Uinteger(2),
                                                 ),
                                                 inner_exprs: vec![],
                                             },
@@ -357,7 +403,9 @@ mod tests {
                     left_sum: Sum {
                         term: Term {
                             factor: Factor::PostfixExpression(PostfixExpression {
-                                primary_expr: PrimaryExpression::Value(ValueExpression::Integer(1)),
+                                primary_expr: PrimaryExpression::Value(ValueExpression::Uinteger(
+                                    1,
+                                )),
                                 inner_exprs: vec![],
                             }),
                             multiplications: vec![],
@@ -368,7 +416,7 @@ mod tests {
                                 right_term: Box::new(Term {
                                     factor: Factor::PostfixExpression(PostfixExpression {
                                         primary_expr: PrimaryExpression::Value(
-                                            ValueExpression::Integer(2),
+                                            ValueExpression::Uinteger(2),
                                         ),
                                         inner_exprs: vec![],
                                     }),
@@ -380,7 +428,7 @@ mod tests {
                                 right_term: Box::new(Term {
                                     factor: Factor::PostfixExpression(PostfixExpression {
                                         primary_expr: PrimaryExpression::Value(
-                                            ValueExpression::Integer(3),
+                                            ValueExpression::Uinteger(3),
                                         ),
                                         inner_exprs: vec![],
                                     }),
@@ -392,7 +440,7 @@ mod tests {
                                 right_term: Box::new(Term {
                                     factor: Factor::PostfixExpression(PostfixExpression {
                                         primary_expr: PrimaryExpression::Value(
-                                            ValueExpression::Integer(4),
+                                            ValueExpression::Uinteger(4),
                                         ),
                                         inner_exprs: vec![],
                                     }),
@@ -407,7 +455,7 @@ mod tests {
                             term: Term {
                                 factor: Factor::PostfixExpression(PostfixExpression {
                                     primary_expr: PrimaryExpression::Value(
-                                        ValueExpression::Integer(5),
+                                        ValueExpression::Uinteger(5),
                                     ),
                                     inner_exprs: vec![],
                                 }),
@@ -419,7 +467,7 @@ mod tests {
                                     right_term: Box::new(Term {
                                         factor: Factor::PostfixExpression(PostfixExpression {
                                             primary_expr: PrimaryExpression::Value(
-                                                ValueExpression::Integer(6),
+                                                ValueExpression::Uinteger(6),
                                             ),
                                             inner_exprs: vec![],
                                         }),
@@ -431,7 +479,7 @@ mod tests {
                                     right_term: Box::new(Term {
                                         factor: Factor::PostfixExpression(PostfixExpression {
                                             primary_expr: PrimaryExpression::Value(
-                                                ValueExpression::Integer(7),
+                                                ValueExpression::Uinteger(7),
                                             ),
                                             inner_exprs: vec![],
                                         }),

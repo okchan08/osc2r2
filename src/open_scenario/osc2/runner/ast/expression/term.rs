@@ -115,6 +115,39 @@ impl Term {
                         result = ExpressionValue::Int(left * right);
                     }
                 },
+                (Uint(left), Uint(right)) => match multiplication.operation {
+                    Div => {
+                        result = ExpressionValue::Uint(left / right);
+                    }
+                    Mod => {
+                        result = ExpressionValue::Uint(left % right);
+                    }
+                    Mul => {
+                        result = ExpressionValue::Uint(left * right);
+                    }
+                },
+                (Uint(left), Int(right)) => match multiplication.operation {
+                    Div => {
+                        result = ExpressionValue::Int(left as i64 / right);
+                    }
+                    Mod => {
+                        result = ExpressionValue::Int(left as i64 % right);
+                    }
+                    Mul => {
+                        result = ExpressionValue::Int(left as i64 * right);
+                    }
+                },
+                (Int(left), Uint(right)) => match multiplication.operation {
+                    Div => {
+                        result = ExpressionValue::Int(left / right as i64);
+                    }
+                    Mod => {
+                        result = ExpressionValue::Int(left % right as i64);
+                    }
+                    Mul => {
+                        result = ExpressionValue::Int(left * right as i64);
+                    }
+                },
                 (Int(left), Float(right)) => match multiplication.operation {
                     Div => {
                         result = ExpressionValue::Float(OrderedFloat(left as f64 / right.0));
@@ -126,7 +159,29 @@ impl Term {
                         result = ExpressionValue::Float(OrderedFloat(left as f64 * right.0));
                     }
                 },
+                (Uint(left), Float(right)) => match multiplication.operation {
+                    Div => {
+                        result = ExpressionValue::Float(OrderedFloat(left as f64 / right.0));
+                    }
+                    Mod => {
+                        result = ExpressionValue::Float(OrderedFloat(left as f64 % right.0));
+                    }
+                    Mul => {
+                        result = ExpressionValue::Float(OrderedFloat(left as f64 * right.0));
+                    }
+                },
                 (Float(left), Int(right)) => match multiplication.operation {
+                    Div => {
+                        result = ExpressionValue::Float(OrderedFloat(left.0 / right as f64));
+                    }
+                    Mod => {
+                        result = ExpressionValue::Float(OrderedFloat(left.0 % right as f64));
+                    }
+                    Mul => {
+                        result = ExpressionValue::Float(OrderedFloat(left.0 * right as f64));
+                    }
+                },
+                (Float(left), Uint(right)) => match multiplication.operation {
                     Div => {
                         result = ExpressionValue::Float(OrderedFloat(left.0 / right as f64));
                     }
@@ -165,6 +220,7 @@ mod tests {
         },
         tests::util::lex_source,
     };
+    use pretty_assertions::assert_eq;
 
     use super::*;
 
@@ -175,12 +231,12 @@ mod tests {
                 "123".to_string(),
                 Ok(Term {
                     factor: Factor::PostfixExpression(PostfixExpression {
-                        primary_expr: PrimaryExpression::Value(ValueExpression::Integer(123)),
+                        primary_expr: PrimaryExpression::Value(ValueExpression::Uinteger(123)),
                         inner_exprs: vec![],
                     }),
                     multiplications: vec![],
                 }),
-                ExpressionValue::Int(123),
+                ExpressionValue::Uint(123),
             ),
             (
                 "-98.7".to_string(),
@@ -202,7 +258,7 @@ mod tests {
                 Ok(Term {
                     factor: Factor::NegativeFactor(Box::new(Factor::PostfixExpression(
                         PostfixExpression {
-                            primary_expr: PrimaryExpression::Value(ValueExpression::Integer(34)),
+                            primary_expr: PrimaryExpression::Value(ValueExpression::Uinteger(34)),
                             inner_exprs: vec![],
                         },
                     ))),
@@ -223,7 +279,7 @@ mod tests {
                 Ok(Term {
                     factor: Factor::NegativeFactor(Box::new(Factor::PostfixExpression(
                         PostfixExpression {
-                            primary_expr: PrimaryExpression::Value(ValueExpression::Integer(34)),
+                            primary_expr: PrimaryExpression::Value(ValueExpression::Uinteger(34)),
                             inner_exprs: vec![],
                         },
                     ))),
@@ -240,7 +296,7 @@ mod tests {
                         Multiplication {
                             operation: MultiplicativeOperation::Div,
                             right_factor: Box::new(Factor::PostfixExpression(PostfixExpression {
-                                primary_expr: PrimaryExpression::Value(ValueExpression::Integer(
+                                primary_expr: PrimaryExpression::Value(ValueExpression::Uinteger(
                                     10,
                                 )),
                                 inner_exprs: vec![],

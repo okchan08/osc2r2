@@ -115,7 +115,7 @@ mod tests {
                                                 factor: Factor::PostfixExpression(
                                                     PostfixExpression {
                                                         primary_expr: PrimaryExpression::Value(
-                                                            ValueExpression::Integer(1),
+                                                            ValueExpression::Uinteger(1),
                                                         ),
                                                         inner_exprs: vec![],
                                                     },
@@ -138,7 +138,7 @@ mod tests {
                                                 factor: Factor::PostfixExpression(
                                                     PostfixExpression {
                                                         primary_expr: PrimaryExpression::Value(
-                                                            ValueExpression::Integer(2),
+                                                            ValueExpression::Uinteger(2),
                                                         ),
                                                         inner_exprs: vec![],
                                                     },
@@ -161,7 +161,7 @@ mod tests {
                                                 factor: Factor::PostfixExpression(
                                                     PostfixExpression {
                                                         primary_expr: PrimaryExpression::Value(
-                                                            ValueExpression::Integer(3),
+                                                            ValueExpression::Uinteger(3),
                                                         ),
                                                         inner_exprs: vec![],
                                                     },
@@ -174,7 +174,7 @@ mod tests {
                                                     factor: Factor::PostfixExpression(
                                                         PostfixExpression {
                                                             primary_expr: PrimaryExpression::Value(
-                                                                ValueExpression::Integer(4),
+                                                                ValueExpression::Uinteger(4),
                                                             ),
                                                             inner_exprs: vec![],
                                                         },
@@ -231,7 +231,7 @@ mod tests {
                                                 factor: Factor::PostfixExpression(
                                                     PostfixExpression {
                                                         primary_expr: PrimaryExpression::Value(
-                                                            ValueExpression::Integer(2),
+                                                            ValueExpression::Uinteger(2),
                                                         ),
                                                         inner_exprs: vec![],
                                                     },
@@ -260,7 +260,7 @@ mod tests {
                                                     factor: Factor::PostfixExpression(
                                                         PostfixExpression {
                                                             primary_expr: PrimaryExpression::Value(
-                                                                ValueExpression::Integer(3),
+                                                                ValueExpression::Uinteger(3),
                                                             ),
                                                             inner_exprs: vec![],
                                                         },

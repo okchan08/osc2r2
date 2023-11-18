@@ -10,6 +10,7 @@ mod field;
 mod identifier;
 mod method;
 mod modifier;
+mod osc_enum;
 mod osc_struct;
 pub mod parser;
 mod scenario;

@@ -39,6 +39,7 @@ impl Factor {
                 match res {
                     ExpressionValue::Float(val) => Ok(ExpressionValue::Float(-val)),
                     ExpressionValue::Int(val) => Ok(ExpressionValue::Int(-val)),
+                    ExpressionValue::Uint(val) => Ok(ExpressionValue::Int(-(val as i64))),
                     _ => Err(EvaluationError::InvalidOperation),
                 }
             }

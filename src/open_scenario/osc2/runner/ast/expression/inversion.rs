@@ -66,7 +66,9 @@ mod tests {
                     left_sum: Sum {
                         term: Term {
                             factor: Factor::PostfixExpression(PostfixExpression {
-                                primary_expr: PrimaryExpression::Value(ValueExpression::Integer(1)),
+                                primary_expr: PrimaryExpression::Value(ValueExpression::Uinteger(
+                                    1,
+                                )),
                                 inner_exprs: vec![],
                             }),
                             multiplications: vec![],
@@ -79,7 +81,7 @@ mod tests {
                             term: Term {
                                 factor: Factor::PostfixExpression(PostfixExpression {
                                     primary_expr: PrimaryExpression::Value(
-                                        ValueExpression::Integer(2),
+                                        ValueExpression::Uinteger(2),
                                     ),
                                     inner_exprs: vec![],
                                 }),
@@ -97,7 +99,9 @@ mod tests {
                     left_sum: Sum {
                         term: Term {
                             factor: Factor::PostfixExpression(PostfixExpression {
-                                primary_expr: PrimaryExpression::Value(ValueExpression::Integer(1)),
+                                primary_expr: PrimaryExpression::Value(ValueExpression::Uinteger(
+                                    1,
+                                )),
                                 inner_exprs: vec![],
                             }),
                             multiplications: vec![],

@@ -71,6 +71,7 @@ impl Expression {
 pub enum ExpressionValue {
     Float(OrderedFloat<f64>),
     Int(i64),
+    Uint(u64),
     String(String),
     Bool(bool),
 }

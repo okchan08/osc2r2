@@ -3,7 +3,7 @@ use std::fmt;
 #[derive(Debug, PartialEq, Clone)]
 pub enum Token {
     Identifier { identifier: String },
-    IntNumber(i64),
+    IntNumber(u64),
     FloatNumber(f64),
     Indent,
     Dedent,

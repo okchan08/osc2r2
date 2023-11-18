@@ -17,6 +17,7 @@ use super::{
     field::Field,
     method::Method,
     modifier::Modifier,
+    osc_enum::OscEnum,
     osc_struct::Struct,
     parser::{SpanIterator, Spans},
 };
@@ -37,7 +38,7 @@ enum OscDeclaration {
     PhysicalType,
     #[default]
     Unit,
-    Enum,
+    Enum(OscEnum),
     Struct(Struct),
     Actor(Actor),
     Action(Action),
@@ -94,8 +95,13 @@ impl OscFile {
                 Token::Scenario => osc_file.osc_declarations.push(OscDeclaration::Scenario(
                     Scenario::parse_scenario(&mut span_iter)?,
                 )),
+                Token::Enum => {
+                    osc_file
+                        .osc_declarations
+                        .push(OscDeclaration::Enum(OscEnum::parse_enum(&mut span_iter)?));
+                }
                 _ => {
-                    panic!("unexpected or unsupported token {:?} found", span.token)
+                    panic!("unexpected or unsupported token {:?} found at", span.token)
                 }
             }
         }
