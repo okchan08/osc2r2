@@ -1,16 +1,14 @@
 #![allow(dead_code)]
 
-use bevy::utils::tracing::Span;
-
 use crate::open_scenario::osc2::runner::{
     ast::{identifier::Identifier, utils},
-    lex::{lexer::Spanned, token::Token},
+    lex::token::Token,
 };
 
 use super::{
     action::Action,
     actor::Actor,
-    behavior::{BehaviorInvocation, BehaviorSpecification},
+    behavior::BehaviorSpecification,
     constraint::Constraint,
     errors::{ParseError, ParseErrorType},
     event::Event,
@@ -217,7 +215,6 @@ impl Scenario {
                     }
                     if let Some(span) = span_iter.next() {
                         // expect indent token
-                        curr_loc = span.start_loc;
                         if span.token != Token::Indent {
                             return Err(ParseError {
                                 error: ParseErrorType::UnexpectedToken {
@@ -236,28 +233,26 @@ impl Scenario {
                             token_loc: Some(curr_loc),
                         });
                     }
-                    loop {
-                        if let Some(span) = span_iter.peek(0) {
-                            match span.token {
-                                Token::Dedent => {
-                                    span_iter.next();
-                                    break;
-                                }
-                                Token::On | Token::Do => {
-                                    scenario.behaviors.push(
-                                        BehaviorSpecification::parse_behavior_specification(
-                                            span_iter,
-                                        )?,
-                                    );
-                                }
-                                _ => {
-                                    for member in ScenarioMemberDeclaration::parse_scenario_member_declarations(span_iter)? {
-                                        scenario.scenarios.push(member);
-                                  }
+                    while let Some(span) = span_iter.peek(0) {
+                        match span.token {
+                            Token::Dedent => {
+                                span_iter.next();
+                                break;
+                            }
+                            Token::On | Token::Do => {
+                                scenario.behaviors.push(
+                                    BehaviorSpecification::parse_behavior_specification(span_iter)?,
+                                );
+                            }
+                            _ => {
+                                for member in
+                                    ScenarioMemberDeclaration::parse_scenario_member_declarations(
+                                        span_iter,
+                                    )?
+                                {
+                                    scenario.scenarios.push(member);
                                 }
                             }
-                        } else {
-                            break;
                         }
                     }
                 }
@@ -266,7 +261,7 @@ impl Scenario {
                         error: ParseErrorType::Unsupported {
                             found: Token::Inherits,
                         },
-                        token_loc: Some(span.start_loc.clone()),
+                        token_loc: Some(span.start_loc),
                     });
                 }
                 _ => {
@@ -275,7 +270,7 @@ impl Scenario {
                             found: span.token.clone(),
                             expected: vec![Token::Newline, Token::Colon, Token::Inherits],
                         },
-                        token_loc: Some(span.start_loc.clone()),
+                        token_loc: Some(span.start_loc),
                     });
                 }
             }

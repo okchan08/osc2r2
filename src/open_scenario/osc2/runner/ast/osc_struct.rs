@@ -1,4 +1,5 @@
-use bevy::utils::HashMap;
+#![allow(dead_code)]
+use std::collections::HashMap;
 
 use crate::open_scenario::osc2::runner::lex::{lexer::Spanned, token::Token};
 
@@ -13,7 +14,7 @@ use super::{
     value::Value,
 };
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq)]
 pub(super) struct Struct {
     name: Identifier,
     parent_struct: Option<Identifier>,
@@ -34,8 +35,12 @@ pub(super) enum StructMemberDeclaration {
 
 impl Struct {
     pub fn parse_struct(span_iter: &mut SpanIterator) -> Result<Struct, ParseError> {
-        let mut osc_struct = Struct::default();
-        osc_struct.name = Struct::parse_struct_name(span_iter)?;
+        let mut osc_struct = Struct {
+            name: Struct::parse_struct_name(span_iter)?,
+            parent_struct: None,
+            initial_field_values: HashMap::new(),
+            member_declaration: Vec::new(),
+        };
         while let Some(span) = span_iter.peek(0) {
             match span.token {
                 Token::Inherits => {
@@ -43,7 +48,7 @@ impl Struct {
                         error: ParseErrorType::Unsupported {
                             found: span.token.clone(),
                         },
-                        token_loc: Some(span.start_loc.clone()),
+                        token_loc: Some(span.start_loc),
                     });
                 }
                 Token::Colon => {
@@ -56,7 +61,7 @@ impl Struct {
                                 found: nxt.token.clone(),
                                 expected: vec![Token::Newline],
                             },
-                            token_loc: Some(nxt.start_loc.clone()),
+                            token_loc: Some(nxt.start_loc),
                         });
                     }
                     let Some(nxt) = span_iter.next() else {
@@ -67,7 +72,7 @@ impl Struct {
                                 found: nxt.token.clone(),
                                 expected: vec![Token::Indent],
                             },
-                            token_loc: Some(nxt.start_loc.clone()),
+                            token_loc: Some(nxt.start_loc),
                         });
                     }
                     osc_struct.member_declaration = Struct::parse_struct_member(span_iter)?;

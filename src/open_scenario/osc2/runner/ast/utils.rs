@@ -26,7 +26,7 @@ pub(super) fn parse_qualified_behavior_name(
                         identifier: "".to_string(),
                     }],
                 },
-                token_loc: Some(first_span.start_loc.clone()),
+                token_loc: Some(first_span.start_loc),
             });
         }
     };
@@ -87,10 +87,7 @@ pub(super) fn peek_next_is_identifier(span_iter: &SpanIterator) -> bool {
     let Some(span) = span_iter.peek(0) else {
         return false;
     };
-    match span.token {
-        Token::Identifier { identifier: _ } => true,
-        _ => false,
-    }
+    matches!(span.token, Token::Identifier { identifier: _ })
 }
 
 pub(super) fn match_peek_next(span_iter: &SpanIterator, expect: Token) -> bool {
@@ -113,7 +110,7 @@ pub(super) fn consume_one_token(
                     found: span.token.clone(),
                     expected: vec![expect],
                 },
-                token_loc: Some(span.start_loc.clone()),
+                token_loc: Some(span.start_loc),
             })
         }
     } else {

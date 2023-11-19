@@ -124,7 +124,7 @@ impl Parameter {
                             found: span.token.clone(),
                             expected: vec![Token::Equal, Token::Sample, Token::Newline],
                         },
-                        token_loc: Some(span.start_loc.clone()),
+                        token_loc: Some(span.start_loc),
                     });
                 }
                 None => {
@@ -138,7 +138,7 @@ impl Parameter {
         Ok(names
             .into_iter()
             .map(|name| Parameter {
-                name: name,
+                name,
                 field_type: defined_type.clone(),
                 default_value: default_val.clone(),
                 constraints: constraints.to_vec(),
@@ -173,7 +173,7 @@ impl Variable {
                         found: token.clone(),
                         expected: vec![Token::Var],
                     },
-                    token_loc: Some(start_loc.clone()),
+                    token_loc: Some(*start_loc),
                 });
             }
             None => {
@@ -185,53 +185,50 @@ impl Variable {
         }
         let names = Field::parse_field_name_list(span_iter)?;
         let defined_type = Type::parse_type(span_iter)?;
-        loop {
-            match span_iter.peek(0) {
-                Some(Spanned {
-                    token: Token::Equal,
-                    start_loc,
-                    ..
-                })
-                | Some(Spanned {
-                    token: Token::Sample,
-                    start_loc,
-                    ..
-                }) => {
-                    return Err(ParseError {
-                        error: ParseErrorType::Unsupported {
-                            found: Token::Equal,
-                        },
-                        token_loc: Some(*start_loc),
-                    });
-                }
-                Some(Spanned {
-                    token: Token::Newline,
-                    ..
-                }) => {
-                    span_iter.next();
-                    break;
-                }
-                Some(span) => {
-                    return Err(ParseError {
-                        error: ParseErrorType::UnexpectedToken {
-                            found: span.token.clone(),
-                            expected: vec![Token::Equal, Token::Sample, Token::Newline],
-                        },
-                        token_loc: Some(span.start_loc.clone()),
-                    });
-                }
-                None => {
-                    return Err(ParseError {
-                        error: ParseErrorType::EndOfFile,
-                        token_loc: None,
-                    });
-                }
+        match span_iter.peek(0) {
+            Some(Spanned {
+                token: Token::Equal,
+                start_loc,
+                ..
+            })
+            | Some(Spanned {
+                token: Token::Sample,
+                start_loc,
+                ..
+            }) => {
+                return Err(ParseError {
+                    error: ParseErrorType::Unsupported {
+                        found: Token::Equal,
+                    },
+                    token_loc: Some(*start_loc),
+                });
+            }
+            Some(Spanned {
+                token: Token::Newline,
+                ..
+            }) => {
+                span_iter.next();
+            }
+            Some(span) => {
+                return Err(ParseError {
+                    error: ParseErrorType::UnexpectedToken {
+                        found: span.token.clone(),
+                        expected: vec![Token::Equal, Token::Sample, Token::Newline],
+                    },
+                    token_loc: Some(span.start_loc),
+                });
+            }
+            None => {
+                return Err(ParseError {
+                    error: ParseErrorType::EndOfFile,
+                    token_loc: None,
+                });
             }
         }
         Ok(names
             .into_iter()
             .map(|name| Variable {
-                name: name,
+                name,
                 field_type: defined_type.clone(),
                 default_value: None,
                 sample_expression: None,

@@ -1,8 +1,9 @@
+#![allow(dead_code)]
 use ordered_float::OrderedFloat;
 
 use crate::open_scenario::osc2::runner::{
     ast::{
-        errors::{ParseError, ParseErrorType},
+        errors::ParseError,
         expression::{EvaluationError, ExpressionValue},
         parser::SpanIterator,
         utils,
@@ -17,28 +18,6 @@ pub enum MultiplicativeOperation {
     Mul,
     Div,
     Mod,
-}
-
-impl MultiplicativeOperation {
-    pub fn parse_operation(
-        span_iter: &mut SpanIterator,
-    ) -> Result<MultiplicativeOperation, ParseError> {
-        let Some(span) = span_iter.next() else {
-            return Err(ParseError { error: ParseErrorType::EndOfFile, token_loc: None });
-        };
-        match span.token {
-            Token::Star => Ok(MultiplicativeOperation::Mul),
-            Token::Slash => Ok(MultiplicativeOperation::Div),
-            Token::Percent => Ok(MultiplicativeOperation::Mod),
-            _ => Err(ParseError {
-                error: ParseErrorType::UnexpectedToken {
-                    found: span.token.clone(),
-                    expected: vec![Token::Star, Token::Slash, Token::Percent],
-                },
-                token_loc: Some(span.start_loc.clone()),
-            }),
-        }
-    }
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]

@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use crate::open_scenario::osc2::runner::ast::parser::Spans;
 use crate::open_scenario::osc2::runner::lex::lexer::make_tokenizer;
 

@@ -33,7 +33,7 @@ impl Disjunction {
     }
 
     pub fn eval(&self) -> Result<ExpressionValue, EvaluationError> {
-        assert!(self.conjunctions.len() > 0);
+        assert!(!self.conjunctions.is_empty());
         if self.conjunctions.len() == 1 {
             return self.conjunctions[0].eval();
         }

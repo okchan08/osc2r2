@@ -18,8 +18,8 @@ pub(super) enum Type {
     // and determine the type in later analysis.
     UserDefinedType(Identifier),
     QualifiedBehavior {
-        Actor: Option<Identifier>,
-        Behavior: Identifier,
+        actor: Option<Identifier>,
+        behavior: Identifier,
     },
 
     // List cannot be nested.
@@ -42,7 +42,7 @@ impl Type {
                             found: of_token_span.token.clone(),
                             expected: vec![Token::Of],
                         },
-                        token_loc: Some(of_token_span.start_loc.clone()),
+                        token_loc: Some(of_token_span.start_loc),
                     });
                 }
                 Ok(Type::List(Box::new(Type::parse_non_aggregate_type(
@@ -89,10 +89,10 @@ impl Type {
                                 token: Token::Identifier { identifier },
                                 ..
                             }) => Ok(Type::QualifiedBehavior {
-                                Actor: Some(Identifier {
+                                actor: Some(Identifier {
                                     name: first_identifier,
                                 }),
-                                Behavior: Identifier {
+                                behavior: Identifier {
                                     name: identifier.to_owned(),
                                 },
                             }),
@@ -103,7 +103,7 @@ impl Type {
                                         identifier: "".to_string(),
                                     }],
                                 },
-                                token_loc: Some(spanned.start_loc.clone()),
+                                token_loc: Some(spanned.start_loc),
                             }),
 
                             None => Err(ParseError {
@@ -128,7 +128,7 @@ impl Type {
                         Token::String,
                     ],
                 },
-                token_loc: Some(spanned.start_loc.clone()),
+                token_loc: Some(spanned.start_loc),
             }),
             None => Err(ParseError {
                 error: ParseErrorType::EndOfFile,
@@ -189,10 +189,10 @@ mod tests {
         assert_eq!(
             Type::parse_type(&mut spans.iter()).unwrap(),
             Type::QualifiedBehavior {
-                Actor: Some(Identifier {
+                actor: Some(Identifier {
                     name: "my_actor".to_string()
                 }),
-                Behavior: Identifier {
+                behavior: Identifier {
                     name: "my_behavior".to_string()
                 }
             }

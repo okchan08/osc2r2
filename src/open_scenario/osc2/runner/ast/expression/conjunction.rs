@@ -31,7 +31,7 @@ impl Conjunction {
     }
 
     pub fn eval(&self) -> Result<ExpressionValue, EvaluationError> {
-        assert!(self.inversions.len() > 0);
+        assert!(!self.inversions.is_empty());
         if self.inversions.len() == 1 {
             return self.inversions[0].eval();
         }

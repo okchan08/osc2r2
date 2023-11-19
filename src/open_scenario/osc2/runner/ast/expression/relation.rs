@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use crate::open_scenario::osc2::runner::{
     ast::{
         errors::{ParseError, ParseErrorType},
@@ -99,7 +100,7 @@ impl BinaryRelationOp {
                         Token::In,
                     ],
                 },
-                token_loc: Some(span.start_loc.clone()),
+                token_loc: Some(span.start_loc),
             }),
         }
     }
@@ -127,84 +128,12 @@ impl BinaryRelationOp {
             }
         };
         self.eval_internal(l, r)
-        //match (left, right) {
-        //    (Int(l), Int(r)) => self.eval_i64(l, r),
-        //    (Float(l), Int(r)) => self.eval_f64_i64(l.0, r),
-        //    (Int(l), Float(r)) => self.eval_i64_f64(l, r.0),
-        //    (Float(l), Float(r)) => self.eval_f64(l.0, r.0),
-        //    _ => Err(EvaluationError::InvalidOperation),
-        //}
     }
 
     fn eval_internal<L, R>(&self, left: L, right: R) -> Result<ExpressionValue, EvaluationError>
     where
         L: PartialOrd<R>,
     {
-        use BinaryRelationOp::*;
-        match self {
-            Eq => Ok(ExpressionValue::Bool(left == right)),
-            NotEq => Ok(ExpressionValue::Bool(left != right)),
-            Gt => Ok(ExpressionValue::Bool(left > right)),
-            Ge => Ok(ExpressionValue::Bool(left >= right)),
-            Lt => Ok(ExpressionValue::Bool(left < right)),
-            Le => Ok(ExpressionValue::Bool(left <= right)),
-            In => Err(EvaluationError::InvalidOperation),
-        }
-    }
-
-    fn eval_u64(&self, left: u64, right: u64) -> Result<ExpressionValue, EvaluationError> {
-        use BinaryRelationOp::*;
-        match self {
-            Eq => Ok(ExpressionValue::Bool(left == right)),
-            NotEq => Ok(ExpressionValue::Bool(left != right)),
-            Gt => Ok(ExpressionValue::Bool(left > right)),
-            Ge => Ok(ExpressionValue::Bool(left >= right)),
-            Lt => Ok(ExpressionValue::Bool(left < right)),
-            Le => Ok(ExpressionValue::Bool(left <= right)),
-            In => Err(EvaluationError::InvalidOperation),
-        }
-    }
-
-    fn eval_i64(&self, left: i64, right: i64) -> Result<ExpressionValue, EvaluationError> {
-        use BinaryRelationOp::*;
-        match self {
-            Eq => Ok(ExpressionValue::Bool(left == right)),
-            NotEq => Ok(ExpressionValue::Bool(left != right)),
-            Gt => Ok(ExpressionValue::Bool(left > right)),
-            Ge => Ok(ExpressionValue::Bool(left >= right)),
-            Lt => Ok(ExpressionValue::Bool(left < right)),
-            Le => Ok(ExpressionValue::Bool(left <= right)),
-            In => Err(EvaluationError::InvalidOperation),
-        }
-    }
-
-    fn eval_f64_i64(&self, left: f64, right: i64) -> Result<ExpressionValue, EvaluationError> {
-        use BinaryRelationOp::*;
-        match self {
-            Eq => Ok(ExpressionValue::Bool(left == right as f64)),
-            NotEq => Ok(ExpressionValue::Bool(left != right as f64)),
-            Gt => Ok(ExpressionValue::Bool(left > right as f64)),
-            Ge => Ok(ExpressionValue::Bool(left >= right as f64)),
-            Lt => Ok(ExpressionValue::Bool(left < right as f64)),
-            Le => Ok(ExpressionValue::Bool(left <= right as f64)),
-            In => Err(EvaluationError::InvalidOperation),
-        }
-    }
-
-    fn eval_i64_f64(&self, left: i64, right: f64) -> Result<ExpressionValue, EvaluationError> {
-        use BinaryRelationOp::*;
-        match self {
-            Eq => Ok(ExpressionValue::Bool(left as f64 == right)),
-            NotEq => Ok(ExpressionValue::Bool(left as f64 != right)),
-            Gt => Ok(ExpressionValue::Bool(left as f64 > right)),
-            Ge => Ok(ExpressionValue::Bool(left as f64 >= right)),
-            Lt => Ok(ExpressionValue::Bool((left as f64) < right)),
-            Le => Ok(ExpressionValue::Bool(left as f64 <= right)),
-            In => Err(EvaluationError::InvalidOperation),
-        }
-    }
-
-    fn eval_f64(&self, left: f64, right: f64) -> Result<ExpressionValue, EvaluationError> {
         use BinaryRelationOp::*;
         match self {
             Eq => Ok(ExpressionValue::Bool(left == right)),

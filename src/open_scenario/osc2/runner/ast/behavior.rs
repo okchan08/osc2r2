@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use crate::open_scenario::osc2::runner::lex::{lexer::Spanned, token::Token};
 
 use super::{
@@ -34,7 +35,7 @@ impl BehaviorSpecification {
                     found: span.token.clone(),
                     expected: vec![Token::Do, Token::On],
                 },
-                token_loc: Some(span.start_loc.clone()),
+                token_loc: Some(span.start_loc),
             }),
         }
     }
@@ -76,31 +77,24 @@ impl DoDirective {
     fn parse_do_member(span_iter: &mut SpanIterator) -> Result<DoMember, ParseError> {
         if let Some(span) = span_iter.peek(0) {
             match &span.token {
-                Token::Serial | Token::Parallel | Token::OneOf => {
-                    return Ok(DoMember::Composition(Composition::parse_composition(
-                        span_iter,
-                    )?));
-                }
-                Token::Wait | Token::Call => {
-                    return Err(ParseError {
-                        error: ParseErrorType::Unsupported {
-                            found: span.token.clone(),
-                        },
-                        token_loc: Some(span.start_loc.clone()),
-                    });
-                }
-                Token::Identifier { identifier: _ } => {
-                    return Ok(DoMember::BehaviorInvocation(
-                        BehaviorInvocation::parse_behavior_invocation(span_iter)?,
-                    ));
-                }
+                Token::Serial | Token::Parallel | Token::OneOf => Ok(DoMember::Composition(
+                    Composition::parse_composition(span_iter)?,
+                )),
+                Token::Wait | Token::Call => Err(ParseError {
+                    error: ParseErrorType::Unsupported {
+                        found: span.token.clone(),
+                    },
+                    token_loc: Some(span.start_loc),
+                }),
+                Token::Identifier { identifier: _ } => Ok(DoMember::BehaviorInvocation(
+                    BehaviorInvocation::parse_behavior_invocation(span_iter)?,
+                )),
                 Token::Emit => {
                     span_iter.next();
-                    let event_name = if let Some(span) = span_iter.next() {
+                    let event_name = utils::parse_identifier(span_iter)?;
+                    if let Some(span) = span_iter.next() {
                         match &span.token {
-                            Token::Identifier { identifier } => Ok(Identifier {
-                                name: identifier.to_owned(),
-                            }),
+                            Token::Newline => Ok(DoMember::EmitDirective(Emit { event_name })),
                             _ => Err(ParseError {
                                 error: ParseErrorType::UnexpectedToken {
                                     found: span.token.clone(),
@@ -108,7 +102,7 @@ impl DoDirective {
                                         identifier: "".to_string(),
                                     }],
                                 },
-                                token_loc: Some(span.start_loc.clone()),
+                                token_loc: Some(span.start_loc),
                             }),
                         }
                     } else {
@@ -116,56 +110,31 @@ impl DoDirective {
                             error: ParseErrorType::EndOfFile,
                             token_loc: None,
                         })
-                    }?;
-                    if let Some(span) = span_iter.next() {
-                        match &span.token {
-                            Token::Newline => {
-                                return Ok(DoMember::EmitDirective(Emit { event_name }));
-                            }
-                            _ => {
-                                return Err(ParseError {
-                                    error: ParseErrorType::UnexpectedToken {
-                                        found: span.token.clone(),
-                                        expected: vec![Token::Identifier {
-                                            identifier: "".to_string(),
-                                        }],
-                                    },
-                                    token_loc: Some(span.start_loc.clone()),
-                                });
-                            }
-                        }
-                    } else {
-                        return Err(ParseError {
-                            error: ParseErrorType::EndOfFile,
-                            token_loc: None,
-                        });
-                    };
+                    }
                 }
-                _ => {
-                    return Err(ParseError {
-                        error: ParseErrorType::UnexpectedToken {
-                            found: span.token.clone(),
-                            expected: vec![
-                                Token::Serial,
-                                Token::Parallel,
-                                Token::OneOf,
-                                Token::Wait,
-                                Token::Call,
-                                Token::Identifier {
-                                    identifier: "".to_string(),
-                                },
-                                Token::Emit,
-                            ],
-                        },
-                        token_loc: Some(span.start_loc.clone()),
-                    });
-                }
+                _ => Err(ParseError {
+                    error: ParseErrorType::UnexpectedToken {
+                        found: span.token.clone(),
+                        expected: vec![
+                            Token::Serial,
+                            Token::Parallel,
+                            Token::OneOf,
+                            Token::Wait,
+                            Token::Call,
+                            Token::Identifier {
+                                identifier: "".to_string(),
+                            },
+                            Token::Emit,
+                        ],
+                    },
+                    token_loc: Some(span.start_loc),
+                }),
             }
         } else {
-            return Err(ParseError {
+            Err(ParseError {
                 error: ParseErrorType::EndOfFile,
                 token_loc: None,
-            });
+            })
         }
     }
 }
@@ -199,7 +168,7 @@ impl TryFrom<&Spanned> for CompositionOp {
                     found: value.token.clone(),
                     expected: vec![Token::Serial, Token::Parallel, Token::OneOf],
                 },
-                token_loc: Some(value.start_loc.clone()),
+                token_loc: Some(value.start_loc),
             }),
         }
     }
@@ -223,9 +192,7 @@ impl Composition {
 
         match span_iter.next() {
             Some(Spanned {
-                token: Token::Lpar,
-                start_loc,
-                ..
+                token: Token::Lpar, ..
             }) => {
                 let args = ArgumentList::parse_arguments(span_iter)?;
                 utils::consume_one_token(span_iter, Token::Rpar)?;
@@ -259,7 +226,7 @@ impl Composition {
                         found: span.token.clone(),
                         expected: vec![Token::Lpar, Token::Colon],
                     },
-                    token_loc: Some(span.start_loc.clone()),
+                    token_loc: Some(span.start_loc),
                 });
             }
             None => {
@@ -325,13 +292,13 @@ impl BehaviorInvocation {
                             found: span.token.clone(),
                             expected: vec![Token::With, Token::Newline],
                         },
-                        token_loc: Some(span.start_loc.clone()),
+                        token_loc: Some(span.start_loc),
                     });
                 }
             }
         }
 
-        let Some(span) = span_iter.peek(0) else {
+        let Some(_) = span_iter.peek(0) else {
           return Err(ParseError {
             error: ParseErrorType::EndOfFile,
             token_loc: None

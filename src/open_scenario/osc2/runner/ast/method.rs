@@ -1,5 +1,3 @@
-use crate::open_scenario::osc2::runner::lex::{lexer::Spanned, location::Location, token::Token};
-
 use super::{
     errors::{ParseError, ParseErrorType},
     parser::SpanIterator,
@@ -13,7 +11,7 @@ impl Method {
             error: ParseErrorType::Unsupported {
                 found: span_iter.peek(0).unwrap().token.clone(),
             },
-            token_loc: Some(span_iter.peek(0).unwrap().start_loc.clone()),
+            token_loc: Some(span_iter.peek(0).unwrap().start_loc),
         })
     }
 }

@@ -1,11 +1,11 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 use crate::open_scenario::osc2::runner::lex::token::Token;
 
 use super::{
     errors::{ParseError, ParseErrorType},
-    expression::{value::ValueExpression, ExpressionValue},
-    identifier::{self, Identifier},
+    expression::value::ValueExpression,
+    identifier::Identifier,
     parser::SpanIterator,
     utils,
 };
@@ -44,13 +44,13 @@ impl OscEnum {
                         error: ParseErrorType::DuplicateDefinition(
                             "duplication enum value found".to_string(),
                         ),
-                        token_loc: Some(span_iter.peek(0).unwrap().start_loc.clone()),
+                        token_loc: Some(span_iter.peek(0).unwrap().start_loc),
                     });
                 }
                 default_val_checker.insert(val);
                 osc_enum.enum_members.push(OscEnumMember {
                     name: first_enum_member_name,
-                    val: val,
+                    val,
                 })
             } else {
                 let val = default_val_checker.len();

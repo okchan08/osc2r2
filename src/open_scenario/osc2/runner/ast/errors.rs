@@ -3,8 +3,6 @@ use std::fmt;
 
 use crate::open_scenario::osc2::runner::lex::{location::Location, token::Token};
 
-use super::identifier::Identifier;
-
 #[derive(Debug, Default)]
 pub struct ParseError {
     pub error: ParseErrorType,

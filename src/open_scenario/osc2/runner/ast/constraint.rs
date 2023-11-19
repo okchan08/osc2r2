@@ -1,6 +1,4 @@
 #![allow(dead_code)]
-use std::default;
-
 use crate::open_scenario::osc2::runner::{
     ast::{errors::ParseErrorType, utils},
     lex::token::Token,
@@ -40,7 +38,7 @@ impl Constraint {
                         error: ParseErrorType::Unsupported {
                             found: Token::RemoveDefault,
                         },
-                        token_loc: Some(span.start_loc.clone()),
+                        token_loc: Some(span.start_loc),
                     });
                 }
                 _ => {
@@ -49,7 +47,7 @@ impl Constraint {
                             found: span.token.clone(),
                             expected: vec![Token::Keep, Token::RemoveDefault],
                         },
-                        token_loc: Some(span.start_loc.clone()),
+                        token_loc: Some(span.start_loc),
                     });
                 }
             }

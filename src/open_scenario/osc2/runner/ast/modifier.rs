@@ -61,7 +61,6 @@ impl Modifier {
                     }
                     if let Some(span) = span_iter.next() {
                         // expect indent token
-                        curr_loc = span.start_loc;
                         if span.token != Token::Indent {
                             return Err(ParseError {
                                 error: ParseErrorType::UnexpectedToken {
@@ -80,24 +79,24 @@ impl Modifier {
                             token_loc: Some(curr_loc),
                         });
                     }
-                    loop {
-                        if let Some(span) = span_iter.peek(0) {
-                            match span.token {
-                                Token::Dedent => {
-                                    span_iter.next();
-                                    break;
-                                }
-                                Token::On => {
-                                    todo!("on directive is not supported.");
-                                }
-                                _ => {
-                                    for scenario in ScenarioMemberDeclaration::parse_scenario_member_declarations(span_iter)? {
+                    while let Some(span) = span_iter.peek(0) {
+                        match span.token {
+                            Token::Dedent => {
+                                span_iter.next();
+                                break;
+                            }
+                            Token::On => {
+                                todo!("on directive is not supported.");
+                            }
+                            _ => {
+                                for scenario in
+                                    ScenarioMemberDeclaration::parse_scenario_member_declarations(
+                                        span_iter,
+                                    )?
+                                {
                                     modifier.scenarios.push(scenario);
-                                  }
                                 }
                             }
-                        } else {
-                            break;
                         }
                     }
                 }
@@ -107,7 +106,7 @@ impl Modifier {
                             found: span.token.clone(),
                             expected: vec![Token::Newline, Token::Colon, Token::Inherits],
                         },
-                        token_loc: Some(span.start_loc.clone()),
+                        token_loc: Some(span.start_loc),
                     });
                 }
             };

@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use crate::open_scenario::osc2::runner::{
     ast::{
         errors::ParseError,

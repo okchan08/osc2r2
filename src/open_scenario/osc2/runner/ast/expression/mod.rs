@@ -37,7 +37,7 @@ impl Expression {
             utils::consume_one_token(span_iter, Token::Colon)?;
             let false_expr = Expression::parse_expression(span_iter)?;
             Ok(Expression::TernaryOp {
-                implication: implication,
+                implication,
                 true_expr: Box::new(true_expr),
                 false_expr: Box::new(false_expr),
             })
@@ -76,35 +76,8 @@ pub enum ExpressionValue {
     Bool(bool),
 }
 
-impl ExpressionValue {
-    pub fn is_numeric(&self) -> bool {
-        use ExpressionValue::*;
-        match self {
-            Float(_) | Int(_) => true,
-            _ => false,
-        }
-    }
-
-    pub fn is_boolean(&self) -> bool {
-        match self {
-            ExpressionValue::Bool(_) => true,
-            _ => false,
-        }
-    }
-}
-
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub enum EvaluationError {
     InvalidOperation,
     NotSupportedYet { message: String },
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    pub fn test_expression() {
-        //let test_cases = vec![];
-    }
 }

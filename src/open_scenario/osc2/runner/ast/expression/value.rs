@@ -1,10 +1,10 @@
+#![allow(dead_code)]
 use ordered_float::OrderedFloat;
 
 use crate::open_scenario::osc2::runner::{
     ast::{
         errors::{ParseError, ParseErrorType},
         parser::SpanIterator,
-        tests::util,
         utils,
     },
     lex::token::Token,
@@ -39,7 +39,7 @@ impl ValueExpression {
             Token::Minus => {
                 utils::consume_one_token(span_iter, Token::Minus)?;
                 let num = utils::parse_integer(span_iter)?;
-                Ok(ValueExpression::Integer((num as i64) * -1))
+                Ok(ValueExpression::Integer(-(num as i64)))
             }
             Token::FloatNumber(num) => {
                 span_iter.next();
@@ -81,7 +81,7 @@ impl ValueExpression {
                     found: span.token.clone(),
                     expected: vec![],
                 },
-                token_loc: Some(span.start_loc.clone()),
+                token_loc: Some(span.start_loc),
             }),
         }
     }
@@ -97,7 +97,7 @@ impl ValueExpression {
                     found: span.token.clone(),
                     expected: vec![Token::IntNumber(0)],
                 },
-                token_loc: Some(span.start_loc.clone()),
+                token_loc: Some(span.start_loc),
             }),
         }
     }

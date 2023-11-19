@@ -1,8 +1,6 @@
 use core::ops::Index;
 use std::{cmp::Ordering, slice::SliceIndex};
 
-use bevy::utils::tracing::Span;
-
 use super::consts::KEYWORD_MAP;
 
 use super::{

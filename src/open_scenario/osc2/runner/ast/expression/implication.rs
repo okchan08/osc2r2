@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use crate::open_scenario::osc2::runner::{
     ast::{errors::ParseError, parser::SpanIterator},
     lex::token::Token,
@@ -31,7 +32,7 @@ impl Implication {
     }
 
     pub fn eval(&self) -> Result<ExpressionValue, EvaluationError> {
-        assert!(self.disjunctions.len() > 0);
+        assert!(!self.disjunctions.is_empty());
         if self.disjunctions.len() == 1 {
             return self.disjunctions[0].eval();
         }

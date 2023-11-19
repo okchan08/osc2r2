@@ -1,11 +1,8 @@
+#![allow(dead_code)]
 use ordered_float::OrderedFloat;
 
 use crate::open_scenario::osc2::runner::{
-    ast::{
-        errors::{ParseError, ParseErrorType},
-        parser::SpanIterator,
-        utils,
-    },
+    ast::{errors::ParseError, parser::SpanIterator, utils},
     lex::token::Token,
 };
 
@@ -158,31 +155,6 @@ pub struct AdditiveOperation {
 pub enum AdditiveOp {
     Plus,
     Minus,
-}
-
-impl AdditiveOp {
-    pub fn parse(span_iter: &mut SpanIterator) -> Result<AdditiveOp, ParseError> {
-        let Some(span) = span_iter.peek(0) else {
-            return Err(ParseError { error: ParseErrorType::EndOfFile, token_loc: None });
-        };
-        match &span.token {
-            Token::Plus => {
-                span_iter.next();
-                Ok(AdditiveOp::Plus)
-            }
-            Token::Minus => {
-                span_iter.next();
-                Ok(AdditiveOp::Minus)
-            }
-            _ => Err(ParseError {
-                error: ParseErrorType::UnexpectedToken {
-                    found: span.token.clone(),
-                    expected: vec![Token::Plus, Token::Minus],
-                },
-                token_loc: Some(span.start_loc.clone()),
-            }),
-        }
-    }
 }
 
 #[cfg(test)]

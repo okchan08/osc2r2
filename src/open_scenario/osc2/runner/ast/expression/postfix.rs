@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use crate::open_scenario::osc2::runner::{
     ast::{
         argument::ArgumentList,
@@ -70,7 +71,7 @@ impl PostfixExpression {
                                     },
                                 ],
                             },
-                            token_loc: Some(span.start_loc.clone()),
+                            token_loc: Some(span.start_loc),
                         }),
                     }
                 }
@@ -101,7 +102,7 @@ impl PostfixExpression {
     }
 
     pub fn eval(&self) -> Result<ExpressionValue, EvaluationError> {
-        if self.inner_exprs.len() > 0 {
+        if !self.inner_exprs.is_empty() {
             Err(EvaluationError::NotSupportedYet {
                 message: "post fix operation is not supported yet".to_string(),
             })
