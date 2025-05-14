@@ -11,3 +11,7 @@ roxmltree = "0.18.0"
 ordered-float = "3.7.0"
 clap = { version = "4.4.6", features = ["derive"] }
 rand = "0.8"
+serde = { version = "1", features = ["derive"] }
+phf = { version = "0.11", features = ["macros"] }
+colored = "2.0.4"
+pretty_assertions = "*"
